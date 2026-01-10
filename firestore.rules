@@ -1,0 +1,153 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Funciones de conveniencia
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             getUserData().role == role;
+    }
+    
+    function isPowerUser() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             getUserData().role in ['admin', 'organizer', 'editor'];
+    }
+
+    // Proyectos
+    match /projects/{projectId} {
+      // PERMISOS TOTALES PARA EL PROYECTO GENERAL (Bootstrapping)
+      // Esto permite que ProjectContext.jsx cree/lea el proyecto sin importar el rol
+      allow read, write: if isSignedIn() && projectId == 'general-project';
+
+      // Reglas estándar para otros proyectos
+      allow read: if isSignedIn() && (
+        hasRole('admin') || 
+        resource.data.ownerId == request.auth.uid || 
+        (resource.data.members != null && request.auth.uid in resource.data.members) ||
+        resource.data.isPublic == true
+      );
+      
+      allow create: if isSignedIn() && isPowerUser();
+      
+      allow update: if isSignedIn() && (
+        hasRole('admin') || 
+        resource.data.ownerId == request.auth.uid || 
+        (resource.data.members != null && request.auth.uid in resource.data.members)
+      );
+      
+      allow delete: if isSignedIn() && (
+        hasRole('admin') || 
+        resource.data.ownerId == request.auth.uid
+      );
+    }
+    
+    // Tareas
+    match /tasks/{taskId} {
+      // Lectura: Dueño, Administrador o Miembro del proyecto
+      allow read: if isSignedIn() && (
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        hasRole('admin') ||
+        (resource != null && resource.data.projectId != null && 
+         exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.members)
+      );
+      
+      allow create: if isSignedIn();
+      
+      allow update, delete: if isSignedIn() && (
+        hasRole('admin') || 
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
+    }
+
+    // Eventos
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if isPowerUser();
+      
+      match /agenda/{activityId} {
+        allow read: if true;
+        allow write: if isPowerUser();
+      }
+      
+      match /registrations/{userId} {
+        allow read: if isSignedIn() && (request.auth.uid == userId || isPowerUser());
+        allow write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // Registros (Collection Group)
+    match /{path=**}/registrations/{registrationId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        isPowerUser()
+      );
+    }
+
+    // Ponentes
+    match /speakers/{speakerId} {
+      allow read: if true;
+      allow write: if isPowerUser();
+    }
+    
+    // Regalos e Inventario
+    match /gifts/{giftId} {
+      allow read: if isSignedIn();
+      allow write: if hasRole('admin');
+    }
+    
+    match /gift_deliveries/{deliveryId} {
+        allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || hasRole('admin'));
+        allow write: if hasRole('admin');
+    }
+    
+    // Usuarios y Perfiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (request.auth.uid == userId || isPowerUser());
+    }
+
+    // Notificaciones
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || hasRole('admin'));
+      allow create: if isSignedIn();
+    }
+
+    // Invitaciones
+    match /invitations/{invitationId} {
+      allow read: if isSignedIn() && (
+        resource.data.email == request.auth.token.email || 
+        resource.data.inviterId == request.auth.uid || 
+        hasRole('admin') ||
+        (resource.data.projectId != null && 
+         exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.members)
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.email == request.auth.token.email || 
+        resource.data.inviterId == request.auth.uid || 
+        hasRole('admin')
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.inviterId == request.auth.uid || 
+        hasRole('admin')
+      );
+    }
+
+    // Denegar todo lo demás por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
