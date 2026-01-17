@@ -101,17 +101,21 @@ const Register = () => {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
-            // Verificar si el usuario ya existe en Firestore para no sobrescribir rol
             const userRef = doc(db, "users", user.uid);
+
+            // Verificar si el usuario ya existe en Firestore
+            const existingUserSnap = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
+            const existingUserDoc = existingUserSnap.docs[0];
+            const existingRole = existingUserDoc?.data()?.role || null;
 
             // Buscar posibles invitaciones por correo
             const q = query(collection(db, "users"), where("email", "==", user.email.toLowerCase()), where("status", "==", "invited"));
             const querySnapshot = await getDocs(q);
-            let roleToAssign = null;
+            let roleFromInvitation = null;
 
             if (!querySnapshot.empty) {
                 const inviteDoc = querySnapshot.docs[0];
-                roleToAssign = inviteDoc.data().role;
+                roleFromInvitation = inviteDoc.data().role;
                 // Borrar el registro de invitación
                 await deleteDoc(doc(db, "users", inviteDoc.id));
             }
@@ -124,26 +128,35 @@ const Register = () => {
                 await setDoc(doc(db, "speakers", speakerDoc.id), {
                     userId: user.uid,
                     status: 'active',
-                    // Sync visible details
                     name: user.displayName || speakerDoc.data().name,
                     image: user.photoURL || speakerDoc.data().image || '',
-                    email: user.email // Ensure email matches
+                    email: user.email
                 }, { merge: true });
                 console.log("Perfil de ponente vinculado exitosamente (Google)");
             }
 
-            // Intentamos leer/actualizar, si no existe el registro de UID, lo creamos
-            await setDoc(userRef, {
+            // Determinar rol final: invitación > existente > seleccionado
+            const finalRole = roleFromInvitation || existingRole || selectedRole;
+
+            // Crear/actualizar documento de usuario
+            const userData = {
                 uid: user.uid,
                 email: user.email.toLowerCase(),
                 displayName: user.displayName,
                 photoURL: user.photoURL || '',
                 status: 'active',
                 lastLogin: serverTimestamp(),
-                // Si encontramos una invitación, asignamos ese rol. Si no, usamos el seleccionado.
-                role: roleToAssign || selectedRole
-            }, { merge: true });
+                role: finalRole
+            };
 
+            // Si es usuario nuevo, agregar createdAt
+            if (!existingUserDoc) {
+                userData.createdAt = serverTimestamp();
+            }
+
+            await setDoc(userRef, userData, { merge: true });
+
+            console.log("Usuario registrado/actualizado con rol:", finalRole);
             showToast("Inicio de sesión con Google exitoso", "success");
             navigate('/projects');
         } catch (err) {
