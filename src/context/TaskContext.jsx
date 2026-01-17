@@ -45,7 +45,7 @@ export const TaskProvider = ({ children }) => {
         const tasksRef = collection(db, 'tasks');
         let q;
 
-        if (currentUser.role === 'admin') {
+        if (currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'organizer') {
             q = query(tasksRef, orderBy('createdAt', 'desc'));
         } else {
             // Non-admins only see tasks where they are the owner/assigned

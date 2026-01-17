@@ -12,6 +12,17 @@ const NotificationPanel = ({ onClose }) => {
         acceptInvitation,
         declineInvitation
     } = useNotifications();
+    const panelRef = React.useRef(null);
+
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (panelRef.current && !panelRef.current.contains(event.target)) {
+                onClose();
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [onClose]);
 
     const getIcon = (type) => {
         switch (type) {
@@ -32,7 +43,7 @@ const NotificationPanel = ({ onClose }) => {
     };
 
     return (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-surface-dark rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-200">
+        <div ref={panelRef} className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-surface-dark rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-200">
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
                 <div>
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">Notificaciones</h3>

@@ -99,7 +99,12 @@ const Toast = ({ toast, onClose }) => {
             </div>
             <div className="flex-grow">
                 <p className="text-sm font-bold text-slate-800 dark:text-white">
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {{
+                        'success': '¡Éxito!',
+                        'error': '¡Error!',
+                        'warning': 'Atención',
+                        'info': 'Información'
+                    }[type] || 'Notificación'}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
                     {message}

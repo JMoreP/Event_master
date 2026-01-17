@@ -7,11 +7,13 @@ import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { useSpeakers } from '../context/SpeakerContext';
 import { sendSpeakerInvitationEmail } from '../services/emailService';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import UserAvatar from './UserAvatar';
 
 const CreateEvent = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const { addEvent, updateEvent } = useEvents();
     const { speakers: allSpeakers, addSpeaker } = useSpeakers();
     const { showToast } = useToast();
@@ -32,7 +34,8 @@ const CreateEvent = () => {
         // New Advanced Fields
         priceType: 'free',
         priceUsdt: '',
-        walletAddress: '',
+        paymentMethod: 'wallet',
+        paymentDetails: '',
         speakerIds: [],
         agenda: []
     });
@@ -81,7 +84,9 @@ const CreateEvent = () => {
                             imageUrl: data.imageUrl || '',
                             priceType: data.priceType || 'free',
                             priceUsdt: data.priceUsdt || '',
-                            walletAddress: data.walletAddress || '',
+                            // Map legacy walletAddress to new structure if needed
+                            paymentMethod: data.paymentMethod || 'wallet',
+                            paymentDetails: data.paymentDetails || data.walletAddress || '',
                             speakerIds: data.speakerIds || [],
                             agenda: data.agenda || []
                         });
@@ -98,6 +103,31 @@ const CreateEvent = () => {
             fetchEvent();
         }
     }, [id, isEditMode]);
+
+    // Permission Check
+    useEffect(() => {
+        const checkPermission = async () => {
+            if (isEditMode && id && formData.title) { // Check only after data is loaded
+                // Wait for formData to be populated or fetch fresh
+                const eventRef = doc(db, 'events', id);
+                const eventSnap = await getDoc(eventRef);
+                if (eventSnap.exists()) {
+                    const data = eventSnap.data();
+                    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'owner';
+                    const isCreator = data.createdBy === currentUser?.uid;
+
+                    if (!isAdmin && !isCreator) {
+                        showToast("No tienes permiso para editar este evento.", "error");
+                        navigate(`/events/${id}`);
+                    }
+                }
+            }
+        }
+        // Only run if we are in edit mode and user is loaded
+        if (isEditMode && currentUser) {
+            checkPermission();
+        }
+    }, [id, isEditMode, currentUser, navigate, showToast]);
 
     const handleAddAgendaItem = () => {
         setAgendaItems([...agendaItems, { time: '', title: '', description: '', speakerId: '' }]);
@@ -258,7 +288,7 @@ const CreateEvent = () => {
                             required
                             value={formData.title}
                             onChange={handleChange}
-                            placeholder="Ej. Tech Summit 2024"
+                            placeholder="Ej. Tech Summit 2026"
                         />
                     </div>
 
@@ -365,15 +395,41 @@ const CreateEvent = () => {
                                     />
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Dirección de Billetera Binance (USDT-BEP20/TRC20)</label>
+                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Método de Cobro</label>
+                                    <div className="flex gap-2 p-1 bg-white dark:bg-background-dark border border-slate-300 dark:border-slate-700 rounded-lg">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, paymentMethod: 'wallet' })}
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.paymentMethod === 'wallet' ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-900' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        >
+                                            Billetera
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, paymentMethod: 'binance_pay' })}
+                                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${formData.paymentMethod === 'binance_pay' ? 'bg-yellow-500 text-black' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                        >
+                                            Binance Pay
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2 md:col-span-2">
+                                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        {formData.paymentMethod === 'wallet' ? 'Dirección de Billetera (USDT)' : 'Binance Pay ID / Email / Teléfono'}
+                                    </label>
                                     <input
                                         type="text"
                                         className="h-12 px-4 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50"
-                                        placeholder="0x... o dirección de Binance"
-                                        value={formData.walletAddress}
-                                        onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
+                                        placeholder={formData.paymentMethod === 'wallet' ? "0x... o dirección de Tron" : "Ej. 123456789 (Pay ID)"}
+                                        value={formData.paymentDetails}
+                                        onChange={(e) => setFormData({ ...formData, paymentDetails: e.target.value })}
                                         required
                                     />
+                                    <p className="text-xs text-slate-500">
+                                        {formData.paymentMethod === 'wallet'
+                                            ? "Asegúrate de especificar la red (BEP20, TRC20, etc) en la descripción si es necesario."
+                                            : "El ID de Binance Pay es la forma más rápida y sin comisiones."}
+                                    </p>
                                 </div>
                             </div>
                         )}

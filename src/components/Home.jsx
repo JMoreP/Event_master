@@ -71,9 +71,6 @@ const Home = () => {
                                 <Link to={currentUser ? "/panel" : "/register"} className="h-12 px-8 rounded-lg bg-primary hover:bg-primary-dark text-white text-base font-bold transition-all shadow-lg shadow-primary/25 flex items-center justify-center">
                                     {currentUser ? "Ir a mi Panel" : "Comenzar Gratis"}
                                 </Link>
-                                <button className="h-12 px-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-base font-bold transition-all">
-                                    Ver Demo
-                                </button>
                             </div>
                             <div className="flex items-center justify-center lg:justify-start gap-4 pt-2">
                                 <div className="flex -space-x-2">
@@ -86,10 +83,14 @@ const Home = () => {
                         </div>
                         {/* Hero Image */}
                         <div className="lg:w-1/2 w-full perspective-1000 animate-zoom-in" style={{ animationDelay: '0.4s' }}>
-                            <div className="relative w-full aspect-video bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transform lg:rotate-y-[-5deg] lg:rotate-x-[2deg] transition-transform duration-500 hover:rotate-0 hover-glow">
-                                <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBzVSHMIAA90DZ2wwi9n6eAhOfO9VRlIVt6Yu1EnivTZj9a1SLGAHrMl0FVAic3zc755FG22-nzs-cpBquhgUgI-xbFOXvjSahgPfmDQmzbJILY4kPdLHtLetZcOCTXQKUyhAX1HcmfGBzxlBXlRtABmoq-eZ8pbQrHCJ6EPL5YAt8w__qqJ-bia8e5yJkRTyDqdDjEnB2BcC_TYfE3EOCVlrnCD-c4R7SjkbrwlM4OFlQb3SFXsDms58LG907yleAtB0RL72xH2zE")' }}></div>
-                                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-primary/20 rounded-full blur-2xl"></div>
-                                <div className="absolute -top-6 -left-6 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+                            <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transform lg:rotate-y-[-5deg] lg:rotate-x-[2deg] transition-transform duration-500 hover:rotate-0 hover-glow group">
+                                <img
+                                    src="/home.jpg"
+                                    alt="Digital Marketing Masterclass"
+                                    className="w-full h-full object-cover"
+                                />
+                                {/* Optional overlay to ensure it sits well on the page */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
                             </div>
                         </div>
                     </div>
@@ -126,8 +127,8 @@ const Home = () => {
                                             <p className="text-slate-500 dark:text-slate-400 text-sm line-clamp-2">{event.description}</p>
                                             <div className="mt-auto pt-4 flex items-center justify-between">
                                                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{typeof event.location === 'object' ? event.location?.venue : event.location}</span>
-                                                <Link to={currentUser ? `/events/${event.id}` : "/login"} className="text-primary text-sm font-bold hover:underline flex items-center gap-1">
-                                                    {currentUser ? "Ver detalles" : "Iniciar Sesión"} <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                <Link to={`/events/${event.id}`} className="text-primary text-sm font-bold hover:underline flex items-center gap-1">
+                                                    Ver detalles <span className="material-symbols-outlined text-sm">arrow_forward</span>
                                                 </Link>
                                             </div>
                                         </div>
@@ -142,7 +143,7 @@ const Home = () => {
                         )}
 
                         <div className="flex justify-center mt-4">
-                            <Link to={currentUser ? "/events" : "/login"} className="px-6 py-3 rounded-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors shadow-sm">
+                            <Link to="/events" className="px-6 py-3 rounded-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm font-bold border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors shadow-sm">
                                 Ver todos los eventos
                             </Link>
                         </div>
@@ -190,33 +191,33 @@ const Home = () => {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Feature 1 */}
-                            <div className="group flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 hover-glow transition-all duration-300">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <span className="material-symbols-outlined text-3xl">calendar_month</span>
+                            <div className="group flex flex-row gap-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 hover-glow transition-all duration-300">
+                                <div className="flex-none flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <span className="material-symbols-outlined text-3xl">event_available</span>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <h3 className="text-slate-900 dark:text-white text-xl font-bold">Programación Inteligente</h3>
-                                    <p className="text-slate-500 dark:text-slate-400 text-base">Calendarios de arrastrar y soltar que hacen la planificación sin esfuerzo. Sincroniza con tus herramientas existentes en un clic.</p>
+                                    <h3 className="text-slate-900 dark:text-white text-xl font-bold">Gestión Integral de Eventos</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-base">Crea y personaliza eventos con agendas detalladas, ponentes y ubicación en minutos.</p>
                                 </div>
                             </div>
                             {/* Feature 2 */}
-                            <div className="group flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 hover-glow transition-all duration-300">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <span className="material-symbols-outlined text-3xl">groups</span>
+                            <div className="group flex flex-row gap-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 hover-glow transition-all duration-300">
+                                <div className="flex-none flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <span className="material-symbols-outlined text-3xl">currency_bitcoin</span>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <h3 className="text-slate-900 dark:text-white text-xl font-bold">Espacios Colaborativos</h3>
-                                    <p className="text-slate-500 dark:text-slate-400 text-base">Actualizaciones de equipo en tiempo real para mantener a todos en la misma página. Comenta, asigna y rastrea al instante.</p>
+                                    <h3 className="text-slate-900 dark:text-white text-xl font-bold">Pagos Flexibles</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-base">Acepta inscripciones fácilmente usando billeteras digitales o **Binance Pay**. Facilita la asistencia global.</p>
                                 </div>
                             </div>
                             {/* Feature 3 */}
-                            <div className="group flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 hover-glow transition-all duration-300">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <span className="material-symbols-outlined text-3xl">donut_large</span>
+                            <div className="group flex flex-row gap-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 hover-glow transition-all duration-300">
+                                <div className="flex-none flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                    <span className="material-symbols-outlined text-3xl">military_tech</span>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                    <h3 className="text-slate-900 dark:text-white text-xl font-bold">Reportes Perspicaces</h3>
-                                    <p className="text-slate-500 dark:text-slate-400 text-base">Visualiza el progreso al instante con paneles automatizados. Exporta reportes a PDF o CSV en segundos.</p>
+                                    <h3 className="text-slate-900 dark:text-white text-xl font-bold">Gamificación</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-base">Motiva a tu comunidad con insignias digitales y recompensas exclusivas por su participación.</p>
                                 </div>
                             </div>
                         </div>
@@ -267,8 +268,17 @@ const Home = () => {
             {/* Bottom CTA */}
             <section className="w-full py-24 bg-background-light dark:bg-background-dark">
                 <div className="layout-container flex justify-center w-full px-6">
-                    <div className="relative w-full max-w-[1280px] bg-primary rounded-3xl overflow-hidden shadow-2xl">
-                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                    <div className="relative w-full max-w-[1280px] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl group">
+                        {/* Background Image */}
+                        <div className="absolute inset-0">
+                            <img
+                                src="/section.jpg"
+                                alt="Event background"
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 to-slate-900/70"></div>
+                        </div>
+
                         <div className="relative z-10 flex flex-col items-center justify-center py-20 px-6 text-center gap-8">
                             <h2 className="text-white text-3xl md:text-5xl font-black tracking-tight max-w-2xl">
                                 ¿Listo para organizar tu mundo?
@@ -277,7 +287,7 @@ const Home = () => {
                                 Únete a miles de equipos que han cambiado a EventMaster para mejor enfoque y claridad.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-                                <Link to={currentUser ? "/panel" : "/register"} className="h-14 px-8 rounded-lg bg-white text-primary text-lg font-bold hover:bg-slate-100 transition-colors shadow-lg flex items-center justify-center">
+                                <Link to={currentUser ? "/panel" : "/register"} className="h-14 px-8 rounded-lg bg-primary hover:bg-primary-dark text-white text-lg font-bold transition-all shadow-lg hover:shadow-primary/25 flex items-center justify-center">
                                     {currentUser ? "Ir a mi Panel" : "Crear Cuenta Gratis"}
                                 </Link>
                             </div>

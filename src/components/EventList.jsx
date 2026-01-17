@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useEvents } from '../context/EventContext';
+import { useAuth } from '../context/AuthContext';
 
 const EventList = () => {
     const { events, loading } = useEvents();
+    const { currentUser } = useAuth();
     const [filter, setFilter] = useState('all');
 
     const getStatusBadge = (status) => {
@@ -54,18 +56,20 @@ const EventList = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-slate-900 dark:text-white text-3xl font-bold leading-tight tracking-tight">Gestión de Eventos</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Organiza conferencias, talleres y encuentros</p>
+                    <h1 className="text-slate-900 dark:text-white text-3xl font-bold leading-tight tracking-tight">Galería de Eventos</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Explora los próximos eventos disponibles</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Link
-                        to="/events/create"
-                        className="h-10 px-4 flex items-center gap-2 bg-primary hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-primary/25 focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-background-dark active-pop"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">add</span>
-                        Nuevo Evento
-                    </Link>
-                </div>
+                {(currentUser && (currentUser.role === 'admin' || currentUser.role === 'organizer')) && (
+                    <div className="flex items-center gap-3">
+                        <Link
+                            to="/events/create"
+                            className="h-10 px-4 flex items-center gap-2 bg-primary hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-primary/25 focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-background-dark active-pop"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">add</span>
+                            Nuevo Evento
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* Grid */}
@@ -108,7 +112,7 @@ const EventList = () => {
 
                             {/* Content */}
                             <div className="flex flex-1 flex-col p-5">
-                                <h3 className="text-slate-900 dark:text-white font-bold text-lg leading-tight mb-2 line-clamp-2group-hover:text-primary transition-colors">
+                                <h3 className="text-slate-900 dark:text-white font-bold text-lg leading-tight mb-2 line-clamp-2 group-hover:text-primary transition-colors">
                                     {event.title}
                                 </h3>
 

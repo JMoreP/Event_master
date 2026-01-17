@@ -44,7 +44,7 @@ const Register = () => {
                 displayName: fullName
             });
 
-            // 3. Revisar si existe una invitación para este correo (Prioridad sobre selección manual)
+            // 3. Revisar si existe una invitación para este correo (Team Invitations)
             const q = query(collection(db, "users"), where("email", "==", email.toLowerCase()), where("status", "==", "invited"));
             const querySnapshot = await getDocs(q);
             let roleToAssign = selectedRole;
@@ -52,8 +52,28 @@ const Register = () => {
             if (!querySnapshot.empty) {
                 const inviteDoc = querySnapshot.docs[0];
                 roleToAssign = inviteDoc.data().role || selectedRole;
-                // Borrar la invitación antigua
+                // Borrar la invitación antigua de users
                 await deleteDoc(doc(db, "users", inviteDoc.id));
+            }
+
+            // 3.5. Revisar si existe una invitación como PONENTE (Speaker Invitations)
+            const qSpeaker = query(collection(db, "speakers"), where("email", "==", email.toLowerCase()));
+            const speakerSnapshot = await getDocs(qSpeaker);
+
+            if (!speakerSnapshot.empty) {
+                // Encontramos un perfil de ponente con este email
+                const speakerDoc = speakerSnapshot.docs[0];
+                // Actualizamos el ponente para linkearlo con el nuevo UID y datos
+                await setDoc(doc(db, "speakers", speakerDoc.id), {
+                    userId: user.uid,
+                    status: 'active',
+                    name: fullName || speakerDoc.data().name,
+                    email: email.toLowerCase()
+                    // Image might not be available in standard register yet, 
+                    // but if they update profile later we might want to sync. 
+                    // For now this links them.
+                }, { merge: true });
+                console.log("Perfil de ponente vinculado exitosamente");
             }
 
             // 4. Crear documento de usuario en Firestore con rol (final)
@@ -94,6 +114,22 @@ const Register = () => {
                 roleToAssign = inviteDoc.data().role;
                 // Borrar el registro de invitación
                 await deleteDoc(doc(db, "users", inviteDoc.id));
+            }
+
+            // Buscamos si es un ponente invitado también en Google Login
+            const qSpeaker = query(collection(db, "speakers"), where("email", "==", user.email.toLowerCase()));
+            const speakerSnapshot = await getDocs(qSpeaker);
+            if (!speakerSnapshot.empty) {
+                const speakerDoc = speakerSnapshot.docs[0];
+                await setDoc(doc(db, "speakers", speakerDoc.id), {
+                    userId: user.uid,
+                    status: 'active',
+                    // Sync visible details
+                    name: user.displayName || speakerDoc.data().name,
+                    image: user.photoURL || speakerDoc.data().image || '',
+                    email: user.email // Ensure email matches
+                }, { merge: true });
+                console.log("Perfil de ponente vinculado exitosamente (Google)");
             }
 
             // Intentamos leer/actualizar, si no existe el registro de UID, lo creamos

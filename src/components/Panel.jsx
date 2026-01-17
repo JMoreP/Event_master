@@ -15,7 +15,7 @@ const Panel = () => {
     const { showToast } = useToast();
 
     // 2. Compute Roles Early
-    const isAdmin = currentUser?.role === 'admin';
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'owner';
     const isOrganizer = currentUser?.role === 'organizer';
     const canManage = isAdmin || isOrganizer;
 
@@ -29,10 +29,9 @@ const Panel = () => {
     const [verifying, setVerifying] = useState(null);
     const [myRegistrationsCount, setMyRegistrationsCount] = useState(0);
 
-    // 5. Side Effects
     useEffect(() => {
         // Double check isAdmin inside the effect to be safe
-        if (!currentUser || currentUser.role !== 'admin') return;
+        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) return;
 
         try {
             const registrationsRef = collectionGroup(db, 'registrations');
@@ -95,6 +94,7 @@ const Panel = () => {
     };
 
     const activeProjects = projects.filter(p => p.status === 'active');
+    const activeEvents = events.filter(e => e.status === 'published' || e.status === 'active');
     const recentProjects = projects.slice(0, 5);
     const pendingTasks = tasks.filter(t => t.status !== 'done');
     const upcomingEvents = events.slice(0, 5);
@@ -172,14 +172,14 @@ const Panel = () => {
                         <>
                             <div className="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 dark:border-border-dark bg-white dark:bg-surface-dark shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-start">
-                                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal">Proyectos Activos</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal">Eventos Activos</p>
                                     <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
-                                        <span className="material-symbols-outlined text-primary text-[20px]">folder_open</span>
+                                        <span className="material-symbols-outlined text-primary text-[20px]">event</span>
                                     </div>
                                 </div>
                                 <div className="flex items-baseline gap-2 mt-2">
-                                    <p className="text-slate-900 dark:text-white tracking-light text-2xl font-bold leading-tight">{activeProjects.length}</p>
-                                    <span className="text-xs text-slate-400">Total: {projects.length}</span>
+                                    <p className="text-slate-900 dark:text-white tracking-light text-2xl font-bold leading-tight">{activeEvents.length}</p>
+                                    <span className="text-xs text-slate-400">Total: {events.length}</span>
                                 </div>
                             </div>
 

@@ -21,8 +21,10 @@ export const AuthProvider = ({ children }) => {
                     const userRef = doc(db, 'users', user.uid);
                     const userSnap = await getDoc(userRef);
 
-                    // Force admin for specific email
-                    const isSuperAdmin = user.email === 'jmoredavid@gmail.com';
+                    // Force specific roles for super admins
+                    let forcedRole = null;
+                    if (user.email === 'yorluis15@gmail.com') forcedRole = 'admin';
+                    if (user.email === 'jmoredavid@gmail.com') forcedRole = 'admin';
 
                     if (userSnap.exists()) {
                         // Si existe el perfil, combinar datos
@@ -41,41 +43,46 @@ export const AuthProvider = ({ children }) => {
                             needsSync = true;
                         }
 
+                        // Enforce forced roles if necessary
+                        if (forcedRole && userData.role !== forcedRole) {
+                            syncData.role = forcedRole;
+                            needsSync = true;
+                        }
+
                         if (needsSync) {
                             try {
                                 await setDoc(userRef, syncData, { merge: true });
-                                console.log('Sincronización con Auth exitosa:', syncData);
+                                if (syncData.role) userData.role = syncData.role; // Update local ref
                             } catch (e) {
                                 console.error('Error sincronizando datos con Auth:', e);
                             }
                         }
 
-                        // Si es superadmin y no tiene el rol 'admin', forzarlo (Super Admin Global)
-                        if (isSuperAdmin && userData.role !== 'admin') {
-                            await setDoc(userRef, { role: 'admin' }, { merge: true });
-                            userData.role = 'admin';
-                        }
-
                         setCurrentUser({
                             ...user,
                             ...userData,
-                            ...syncData, // Ensure local state has the freshest sync'd data
+                            ...syncData,
                             role: userData.role || 'assistant'
                         });
                     } else {
-                        // Si NO existe (ej: primer login con Google), NO creamos perfil aquí automáticamente
-                        // para evitar condiciones de carrera con Register.jsx
-                        const isSuperAdmin = user.email === 'jmoredavid@gmail.com';
+                        // Si NO existe (ej: primer login con Google)
+                        let forcedRole = null;
+                        if (user.email === 'yorluis15@gmail.com') forcedRole = 'admin';
+                        if (user.email === 'jmoredavid@gmail.com') forcedRole = 'admin';
+
                         setCurrentUser({
                             ...user,
-                            role: isSuperAdmin ? 'admin' : 'assistant',
+                            role: forcedRole || 'assistant', // Default
                             status: 'active'
                         });
                     }
                 } catch (error) {
                     console.error("Error al obtener datos del usuario:", error);
-                    const isSuperAdmin = user.email === 'jmoredavid@gmail.com';
-                    setCurrentUser({ ...user, role: isSuperAdmin ? 'admin' : 'assistant' });
+                    let forcedRole = null;
+                    if (user.email === 'yorluis15@gmail.com') forcedRole = 'admin';
+                    if (user.email === 'jmoredavid@gmail.com') forcedRole = 'admin';
+
+                    setCurrentUser({ ...user, role: forcedRole || 'assistant' });
                 }
             } else {
                 setCurrentUser(null);

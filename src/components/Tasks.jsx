@@ -147,7 +147,7 @@ const Tasks = () => {
                                             return (
                                                 <div
                                                     key={task.id}
-                                                    className="group bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover-glow hover:-translate-y-1 transition-all cursor-pointer animate-fade-in-up"
+                                                    className="group bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover-glow hover:-translate-y-1 transition-all cursor-pointer animate-fade-in-up relative hover:z-50"
                                                 >
                                                     <div className="flex justify-between items-start mb-3">
                                                         <span className={`${priority.bg} ${priority.text} text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1`}>

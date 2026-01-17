@@ -11,16 +11,21 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.email in ['jmoredavid@gmail.com', 'yorluis15@gmail.com'];
+    }
+
     function hasRole(role) {
-      return isSignedIn() && 
+      return (role == 'admin' && isSuperAdmin()) || 
+             (isSignedIn() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             getUserData().role == role;
+             getUserData().role == role);
     }
     
     function isPowerUser() {
-      return isSignedIn() && 
+      return isSuperAdmin() || (isSignedIn() && 
              exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-             getUserData().role in ['admin', 'organizer', 'editor'];
+             getUserData().role in ['admin', 'organizer', 'editor']);
     }
 
     // Proyectos
@@ -73,7 +78,8 @@ service cloud.firestore {
     // Eventos
     match /events/{eventId} {
       allow read: if true;
-      allow create, update, delete: if isPowerUser();
+      allow create: if isPowerUser();
+      allow update, delete: if isPowerUser() && (hasRole('admin') || resource.data.createdBy == request.auth.uid);
       
       match /agenda/{activityId} {
         allow read: if true;
@@ -82,7 +88,7 @@ service cloud.firestore {
       
       match /registrations/{userId} {
         allow read: if isSignedIn() && (request.auth.uid == userId || isPowerUser());
-        allow write: if isSignedIn() && request.auth.uid == userId;
+        allow write: if isSignedIn() && (request.auth.uid == userId || isPowerUser());
       }
     }
 

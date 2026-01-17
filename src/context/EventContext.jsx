@@ -30,11 +30,8 @@ export const EventProvider = ({ children }) => {
 
     // Escuchar eventos en tiempo real
     useEffect(() => {
-        if (!currentUser) {
-            setEvents([]);
-            setLoading(false);
-            return;
-        }
+        // Permitir fetch público (sin currentUser)
+        // if (!currentUser) ... (REMOVIDO)
 
         const eventsRef = collection(db, 'events');
         // Ordenar por fecha de inicio del evento si existe, sino por creación
@@ -60,6 +57,7 @@ export const EventProvider = ({ children }) => {
             const eventsRef = collection(db, 'events');
             const newEvent = {
                 ...eventData,
+                createdBy: currentUser.uid,
                 status: eventData.status || 'draft',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()

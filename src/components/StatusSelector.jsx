@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const STATUS_OPTIONS = [
     { id: 'todo', label: 'Por Hacer', icon: 'radio_button_unchecked', color: 'bg-slate-400', text: 'text-slate-600' },
@@ -10,13 +11,20 @@ const STATUS_OPTIONS = [
 
 const StatusSelector = ({ currentStatus, onStatusChange, size = 'sm' }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef(null);
     const dropdownRef = useRef(null);
 
     const activeStatus = STATUS_OPTIONS.find(s => s.id === currentStatus) || STATUS_OPTIONS[0];
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target) &&
+                buttonRef.current &&
+                !buttonRef.current.contains(event.target)
+            ) {
                 setIsOpen(false);
             }
         };
@@ -24,18 +32,43 @@ const StatusSelector = ({ currentStatus, onStatusChange, size = 'sm' }) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            const dropdownHeight = 250; // Approximate height of dropdown with 5 items
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+
+            // Determine if dropdown should open upwards
+            const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+
+            setPosition({
+                top: shouldOpenUpward
+                    ? rect.top + window.scrollY - dropdownHeight - 8 // Open above
+                    : rect.bottom + window.scrollY + 8, // Open below (default)
+                left: rect.left + window.scrollX - (192 - rect.width), // Align right (192 is w-48) or adjust as needed
+            });
+        }
+    }, [isOpen]);
+
     const handleSelect = (statusId) => {
         onStatusChange(statusId);
         setIsOpen(false);
     };
 
+    const toggleDropdown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen(!isOpen);
+    }
+
     const sizeClasses = size === 'sm' ? 'size-6' : 'size-8';
-    const iconSize = size === 'sm' ? 'text-[14px]' : 'text-[18px]';
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <>
             <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(!isOpen); }}
+                ref={buttonRef}
+                onClick={toggleDropdown}
                 className={`${sizeClasses} rounded flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 shadow-sm
                     ${activeStatus.color}`}
                 title={activeStatus.label}
@@ -45,8 +78,12 @@ const StatusSelector = ({ currentStatus, onStatusChange, size = 'sm' }) => {
                 </span>
             </button>
 
-            {isOpen && (
-                <div className="absolute left-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[100] overflow-hidden animate-fade-in-up">
+            {isOpen && createPortal(
+                <div
+                    ref={dropdownRef}
+                    style={{ top: position.top, left: position.left }}
+                    className="fixed w-48 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[9999] overflow-hidden animate-fade-in-up"
+                >
                     <div className="p-1.5 space-y-0.5">
                         {STATUS_OPTIONS.map((option) => (
                             <button
@@ -67,9 +104,10 @@ const StatusSelector = ({ currentStatus, onStatusChange, size = 'sm' }) => {
                             </button>
                         ))}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
-        </div>
+        </>
     );
 };
 

@@ -14,7 +14,7 @@ const MainLayout = () => {
     const { tasks } = useTasks();
     const { unreadCount } = useNotifications();
     const currentPath = location.pathname;
-    const isAdmin = currentUser?.role === 'admin';
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'owner';
     const isOrganizer = currentUser?.role === 'organizer';
     const canManage = isAdmin || isOrganizer;
 
@@ -26,11 +26,12 @@ const MainLayout = () => {
 
     const navigate = useNavigate();
     const searchRef = useRef(null);
+    const profileRef = useRef(null);
 
     const handleLogout = async () => {
         try {
             await logout();
-            navigate('/login');
+            navigate('/login', { replace: true });
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
         }
@@ -67,6 +68,9 @@ const MainLayout = () => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setIsSearchOpen(false);
             }
+            if (profileRef.current && !profileRef.current.contains(event.target)) {
+                setIsProfileOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -83,6 +87,7 @@ const MainLayout = () => {
                     <h2 className="text-lg font-bold tracking-tight">EventMaster</h2>
                 </Link>
                 <div className="flex-1 space-y-1 overflow-y-auto px-3 py-6">
+                    <NavItem to="/" icon="home" label="Inicio" />
                     <NavItem to="/panel" icon="dashboard" label="Panel" active={isActive('/panel')} />
 
                     {/* Management Sections (Organizer/Admin) */}
@@ -126,7 +131,22 @@ const MainLayout = () => {
                         <nav className="hidden text-sm font-medium text-slate-500 dark:text-slate-400 sm:flex">
                             <Link className="hover:text-primary transition-colors" to="/">Inicio</Link>
                             <span className="mx-2 text-slate-300 dark:text-slate-600">/</span>
-                            <span className="text-slate-900 dark:text-white capitalize">{currentPath.replace('/', '') || 'Dashboard'}</span>
+                            <span className="text-slate-900 dark:text-white capitalize">
+                                {{
+                                    '/panel': 'Panel',
+                                    '/projects': 'Proyectos',
+                                    '/tasks': 'Tareas',
+                                    '/team': 'Equipo',
+                                    '/reports': 'Reportes',
+                                    '/events': 'Eventos',
+                                    '/speakers': 'Ponentes',
+                                    '/settings': 'Configuración',
+                                    '/help': 'Ayuda',
+                                    '/calendar': 'Calendario',
+                                    '/my-gifts': 'Mis Premios',
+                                    '/events/my-events': 'Mis Eventos'
+                                }[currentPath] || 'Panel'}
+                            </span>
                         </nav>
                     </div>
                     <div className="flex items-center gap-4">
@@ -210,51 +230,58 @@ const MainLayout = () => {
                             )}
                         </div>
                         <div className="mx-1 h-8 w-[1px] bg-slate-200 dark:bg-slate-700"></div>
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex cursor-pointer items-center gap-3 focus:outline-none"
-                            >
-                                <UserAvatar user={currentUser} size="sm" />
-                            </button>
+                        {currentUser ? (
+                            <div className="relative" ref={profileRef}>
+                                <button
+                                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                    className="flex cursor-pointer items-center gap-3 focus:outline-none"
+                                >
+                                    <UserAvatar user={currentUser} size="sm" />
+                                </button>
 
-                            {/* Dropdown Menu */}
-                            {isProfileOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-surface-dark rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50">
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{currentUser?.displayName || 'Usuario'}</p>
-                                        <p className="text-xs text-slate-500 dark:text-gray-400 truncate">{currentUser?.email}</p>
+                                {/* Dropdown Menu */}
+                                {isProfileOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-surface-dark rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50">
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{currentUser?.displayName || 'Usuario'}</p>
+                                            <p className="text-xs text-slate-500 dark:text-gray-400 truncate">{currentUser?.email}</p>
+                                        </div>
+                                        <div className="py-1">
+                                            <Link
+                                                to="/profile"
+                                                onClick={() => setIsProfileOpen(false)}
+                                                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">person</span>
+                                                Perfil
+                                            </Link>
+                                            <Link
+                                                to="/settings"
+                                                onClick={() => setIsProfileOpen(false)}
+                                                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">settings</span>
+                                                Configuración
+                                            </Link>
+                                        </div>
+                                        <div className="border-t border-slate-100 dark:border-slate-700/50 py-1">
+                                            <button
+                                                onClick={handleLogout}
+                                                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">logout</span>
+                                                Cerrar Sesión
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="py-1">
-                                        <Link
-                                            to="/profile"
-                                            onClick={() => setIsProfileOpen(false)}
-                                            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors"
-                                        >
-                                            <span className="material-symbols-outlined text-[18px]">person</span>
-                                            Perfil
-                                        </Link>
-                                        <Link
-                                            to="/profile"
-                                            onClick={() => setIsProfileOpen(false)}
-                                            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-primary transition-colors"
-                                        >
-                                            <span className="material-symbols-outlined text-[18px]">settings</span>
-                                            Configuración
-                                        </Link>
-                                    </div>
-                                    <div className="border-t border-slate-100 dark:border-slate-700/50 py-1">
-                                        <button
-                                            onClick={handleLogout}
-                                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-                                        >
-                                            <span className="material-symbols-outlined text-[18px]">logout</span>
-                                            Cerrar Sesión
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link to="/login" className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
+                                <span className="material-symbols-outlined text-[18px]">login</span>
+                                <span className="hidden sm:inline">Iniciar Sesión</span>
+                            </Link>
+                        )}
                     </div>
                 </header>
 
@@ -262,8 +289,8 @@ const MainLayout = () => {
                 <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
                     <Outlet />
                 </main>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

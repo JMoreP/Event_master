@@ -23,8 +23,9 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            showToast('¡Bienvenido de nuevo!', 'success');
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            showToast(`¡Bienvenido de nuevo, ${user.displayName || 'Usuario'}!`, 'success');
             navigate('/projects'); // Redirect to projects dashboard
         } catch (err) {
             showToast('Error al iniciar sesión. Por favor verifica tus credenciales.', 'error');
@@ -59,10 +60,10 @@ const Login = () => {
                     createdAt: serverTimestamp(),
                     lastLogin: serverTimestamp()
                 });
-                showToast('¡Bienvenido! Tu cuenta ha sido creada.', 'success');
+                showToast(`¡Bienvenido, ${user.displayName || 'Usuario'}! Tu cuenta ha sido creada.`, 'success');
             } else {
                 await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
-                showToast('Inicio de sesión exitoso.', 'success');
+                showToast(`¡Bienvenido de nuevo, ${user.displayName || 'Usuario'}!`, 'success');
             }
 
             navigate('/projects');

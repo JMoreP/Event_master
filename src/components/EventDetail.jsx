@@ -11,7 +11,7 @@ const EventDetail = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    const isAdmin = currentUser?.role === 'admin';
+    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'owner';
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('info'); // info, agenda, speakers
@@ -19,6 +19,7 @@ const EventDetail = () => {
     const [registrationData, setRegistrationData] = useState(null);
     const [registering, setRegistering] = useState(false);
     const [speakersData, setSpeakersData] = useState([]);
+    const [registrationStats, setRegistrationStats] = useState({ total: 0, confirmed: 0, pending: 0 });
 
     useEffect(() => {
         const fetchEvent = async () => {
@@ -81,9 +82,34 @@ const EventDetail = () => {
         fetchSpeakers();
     }, [event]);
 
+    // Fetch registration statistics for event creators
+    useEffect(() => {
+        if (!currentUser || !event || event.createdBy !== currentUser.uid) return;
+
+        const registrationsRef = collection(db, 'events', id, 'registrations');
+        const unsubscribe = onSnapshot(registrationsRef, (snapshot) => {
+            const registrations = snapshot.docs.map(doc => doc.data());
+            const total = registrations.length;
+            const confirmed = registrations.filter(r => r.status === 'confirmed').length;
+            const pending = registrations.filter(r => r.status === 'pending_payment').length;
+
+            setRegistrationStats({ total, confirmed, pending });
+        }, (error) => {
+            console.error('Error fetching registration stats:', error);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser, event, id]);
+
     const handleRegistration = async () => {
         if (!currentUser) {
             navigate('/login');
+            return;
+        }
+
+        // Prevent event creators from registering in their own events
+        if (event.createdBy === currentUser.uid) {
+            showToast("Como creador del evento, no puedes registrarte como participante", "error");
             return;
         }
 
@@ -325,77 +351,139 @@ const EventDetail = () => {
                     <div className="sticky top-8 space-y-6">
                         {/* Registration Card */}
                         <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden p-6">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-                                {isRegistered ? 'Tu Registro' : 'Inscripción'}
-                            </h3>
-
-                            <div className="flex items-baseline gap-1 mb-6">
-                                <span className="text-3xl font-black text-slate-900 dark:text-white">
-                                    {event.priceType === 'paid' ? `${event.priceUsdt} USDT` : 'Gratis'}
-                                </span>
-                                <span className="text-sm text-slate-500 dark:text-slate-400">/ entrada general</span>
-                            </div>
-
-                            {/* Payment Info for Pending Registrations */}
-                            {isRegistered && registrationData?.status === 'pending_payment' && (
-                                <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl animate-pulse">
-                                    <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 font-bold text-sm mb-2">
-                                        <span className="material-symbols-outlined text-[18px]">warning</span>
-                                        Pago Pendiente
+                            {/* Show registration stats if user is the event creator */}
+                            {currentUser && event.createdBy === currentUser.uid ? (
+                                <div className="space-y-4">
+                                    <div className="text-center pb-4 border-b border-slate-200 dark:border-slate-700">
+                                        <div className="inline-flex items-center justify-center size-12 rounded-full bg-primary/10 text-primary mb-3">
+                                            <span className="material-symbols-outlined text-2xl">shield_person</span>
+                                        </div>
+                                        <h3 className="text-base font-bold text-slate-900 dark:text-white">Panel de Organizador</h3>
                                     </div>
-                                    <p className="text-xs text-yellow-600 dark:text-yellow-500 mb-4">
-                                        Por favor transfiere la cantidad exacta a la siguiente billetera Binance y envía el comprobante al administrador.
+
+                                    {/* Registration Statistics */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-blue-500 text-xl">people</span>
+                                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Registros</span>
+                                            </div>
+                                            <span className="text-lg font-black text-slate-900 dark:text-white">{registrationStats.total}</span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-green-500 text-xl">check_circle</span>
+                                                <span className="text-sm font-medium text-green-700 dark:text-green-400">Confirmados</span>
+                                            </div>
+                                            <span className="text-lg font-black text-green-700 dark:text-green-400">{registrationStats.confirmed}</span>
+                                        </div>
+
+                                        {registrationStats.pending > 0 && (
+                                            <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-yellow-500 text-xl">schedule</span>
+                                                    <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Pagos Pendientes</span>
+                                                </div>
+                                                <span className="text-lg font-black text-yellow-700 dark:text-yellow-400">{registrationStats.pending}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <p className="text-xs text-center text-slate-500 dark:text-slate-400 pt-2">
+                                        Estadísticas en tiempo real
                                     </p>
-                                    <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-700 break-all text-[10px] font-mono select-all">
-                                        {event.walletAddress || 'No wallet assigned'}
+                                </div>
+                            ) : (
+                                <>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                                        {isRegistered ? 'Tu Registro' : 'Inscripción'}
+                                    </h3>
+
+                                    <div className="flex items-baseline gap-1 mb-6">
+                                        <span className="text-3xl font-black text-slate-900 dark:text-white">
+                                            {event.priceType === 'paid' ? `${event.priceUsdt} USDT` : 'Gratis'}
+                                        </span>
+                                        <span className="text-sm text-slate-500 dark:text-slate-400">/ entrada general</span>
                                     </div>
-                                </div>
-                            )}
 
-                            {isRegistered && registrationData?.status === 'confirmed' && (
-                                <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-                                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-bold text-sm">
-                                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                                        ¡Registro Confirmado!
+                                    {/* Payment Info for Pending Registrations */}
+                                    {isRegistered && registrationData?.status === 'pending_payment' && (
+                                        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl animate-pulse">
+                                            <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 font-bold text-sm mb-2">
+                                                <span className="material-symbols-outlined text-[18px]">warning</span>
+                                                Pago Pendiente
+                                            </div>
+                                            <p className="text-xs text-yellow-600 dark:text-yellow-500 mb-4">
+                                                Por favor transfiere la cantidad exacta usando el siguiente método y envía el comprobante.
+                                            </p>
+
+                                            <div className="flex flex-col gap-2">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                                    {event.paymentMethod === 'binance_pay' ? 'BINANCE PAY ID' : 'DIRECCIÓN DE BILLETERA'}
+                                                </span>
+                                                <div className={`p-3 rounded-lg border flex items-center justify-between gap-2 break-all font-mono select-all ${event.paymentMethod === 'binance_pay'
+                                                    ? 'bg-yellow-100 border-yellow-300 text-yellow-900 dark:bg-yellow-900/40 dark:border-yellow-700 dark:text-yellow-100'
+                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
+                                                    }`}>
+                                                    <span>{event.paymentDetails || event.walletAddress || 'No asignado'}</span>
+                                                    {event.paymentMethod === 'binance_pay' && <span className="material-symbols-outlined text-yellow-600">qr_code</span>}
+                                                </div>
+                                                {event.paymentMethod === 'binance_pay' && (
+                                                    <p className="text-[10px] text-slate-400">
+                                                        Ve a Binance App {'>'} Pay {'>'} Enviar {'>'} Ingresa este Pay ID
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isRegistered && registrationData?.status === 'confirmed' && (
+                                        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                                            <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-bold text-sm">
+                                                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                                                ¡Registro Confirmado!
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4 mb-6">
+                                        <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                                            <span className="material-symbols-outlined text-green-500">check_circle</span>
+                                            <span>Acceso a todas las charlas</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                                            <span className="material-symbols-outlined text-green-500">check_circle</span>
+                                            <span>Certificado de participación</span>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
 
-                            <div className="space-y-4 mb-6">
-                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-                                    <span className="material-symbols-outlined text-green-500">check_circle</span>
-                                    <span>Acceso a todas las charlas</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-                                    <span className="material-symbols-outlined text-green-500">check_circle</span>
-                                    <span>Certificado de participación</span>
-                                </div>
-                            </div>
+                                    <button
+                                        onClick={handleRegistration}
+                                        disabled={registering}
+                                        className={`w-full py-3.5 rounded-xl font-bold text-center shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isRegistered
+                                            ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white'
+                                            : 'bg-primary text-white hover:bg-blue-600 shadow-primary/25'
+                                            }`}
+                                    >
+                                        {registering ? (
+                                            <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                                        ) : (
+                                            isRegistered ? 'Cancelar Registro' : 'Registrarme Ahora'
+                                        )}
+                                    </button>
 
-                            <button
-                                onClick={handleRegistration}
-                                disabled={registering}
-                                className={`w-full py-3.5 rounded-xl font-bold text-center shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${isRegistered
-                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-red-500 hover:text-white'
-                                    : 'bg-primary text-white hover:bg-blue-600 shadow-primary/25'
-                                    }`}
-                            >
-                                {registering ? (
-                                    <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                                ) : (
-                                    isRegistered ? 'Cancelar Registro' : 'Registrarme Ahora'
-                                )}
-                            </button>
-
-                            {!isRegistered && (
-                                <p className="text-xs text-center text-slate-500 dark:text-slate-400 mt-4">
-                                    Cupos limitados: {event.capacity || 'Ilimitado'}
-                                </p>
+                                    {!isRegistered && (
+                                        <p className="text-xs text-center text-slate-500 dark:text-slate-400 mt-4">
+                                            Cupos limitados: {event.capacity || 'Ilimitado'}
+                                        </p>
+                                    )}
+                                </>
                             )}
                         </div>
 
                         {/* Admin Tools */}
-                        {(currentUser?.role === 'admin' || currentUser?.role === 'organizer') && (
+                        {(isAdmin || (currentUser && event.createdBy === currentUser.uid)) && (
                             <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
                                 <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Administración</h4>
                                 <div className="flex flex-col gap-2">

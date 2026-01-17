@@ -48,16 +48,19 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
 
+                        <Route element={<MainLayout />}>
+                          <Route path="/events" element={<EventList />} />
+                          <Route path="/events/:id" element={<EventDetail />} />
+                        </Route>
+
                         {/* Rutas Protegidas (Requieren Login) */}
                         <Route element={<ProtectedRoute />}>
                           <Route element={<MainLayout />}>
                             <Route path="/projects" element={<Projects />} />
                             <Route path="/projects/:id" element={<ProjectDetail />} />
                             <Route path="/projects/:projectId/tasks/create" element={<CreateTask />} />
-                            <Route path="/events" element={<EventList />} />
                             <Route path="/events/my-events" element={<MyEvents />} />
                             <Route path="/my-gifts" element={<MyGifts />} />
-                            <Route path="/events/:id" element={<EventDetail />} />
                             <Route path="/panel" element={<Panel />} />
                             <Route path="/profile" element={<Profile />} />
                             <Route path="/settings" element={<Profile />} />
@@ -68,7 +71,7 @@ function App() {
                             <Route path="/reports" element={<Reports />} />
 
                             {/* Rutas exclusivas de Admin y Organizadores */}
-                            <Route element={<ProtectedRoute allowedRoles={['admin', 'organizer']} />}>
+                            <Route element={<ProtectedRoute allowedRoles={['admin', 'organizer', 'owner']} />}>
                               <Route path="/events/create" element={<CreateEvent />} />
                               <Route path="/events/edit/:id" element={<CreateEvent />} />
                               <Route path="/projects/create" element={<CreateProject />} />

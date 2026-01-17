@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
@@ -136,6 +136,9 @@ export const NotificationProvider = ({ children }) => {
                         members: [...members, currentUser.uid]
                     });
                 }
+            } else {
+                console.error("Project does not exist or was deleted.");
+                // Optionally handle this case (e.g. notify user)
             }
 
             // 2. Update invitation status
