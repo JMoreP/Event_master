@@ -16,7 +16,7 @@ const Register = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [selectedRole, setSelectedRole] = useState('assistant'); // 'assistant' for Participant, 'organizer' for Organizer
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const { currentUser, refreshUserData } = useAuth();
     const { showToast } = useToast();
 
     // Redirect if already logged in
@@ -86,6 +86,9 @@ const Register = () => {
                 createdAt: serverTimestamp()
             });
 
+            // Refrescar datos del usuario para actualizar el rol inmediatamente
+            await refreshUserData();
+
             console.log("Registrado exitosamente con rol:", roleToAssign);
             showToast("¡Registrado exitosamente!", "success");
             navigate('/projects');
@@ -98,6 +101,8 @@ const Register = () => {
     const handleGoogleLogin = async () => {
         try {
             const provider = new GoogleAuthProvider();
+            // Forzar selección de cuenta para permitir elegir qué cuenta usar
+            provider.setCustomParameters({ prompt: 'select_account' });
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
@@ -155,6 +160,9 @@ const Register = () => {
             }
 
             await setDoc(userRef, userData, { merge: true });
+
+            // Refrescar datos del usuario para actualizar el rol inmediatamente
+            await refreshUserData();
 
             console.log("Usuario registrado/actualizado con rol:", finalRole);
             showToast("Inicio de sesión con Google exitoso", "success");

@@ -41,31 +41,27 @@ const Login = () => {
             const { db } = await import('../firebase');
 
             const provider = new GoogleAuthProvider();
+            // Forzar selección de cuenta para permitir elegir qué cuenta usar
+            provider.setCustomParameters({ prompt: 'select_account' });
+
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
-            // Initialize profile if not exists
+            // Verificar si el usuario ya existe en Firestore
             const userRef = doc(db, 'users', user.uid);
             const userSnap = await getDoc(userRef);
 
             if (!userSnap.exists()) {
-                const isSuperAdmin = user.email === 'jmoredavid@gmail.com';
-                await setDoc(userRef, {
-                    uid: user.uid,
-                    email: user.email.toLowerCase(),
-                    displayName: user.displayName || '',
-                    photoURL: user.photoURL || '',
-                    role: isSuperAdmin ? 'admin' : 'assistant',
-                    status: 'active',
-                    createdAt: serverTimestamp(),
-                    lastLogin: serverTimestamp()
-                });
-                showToast(`¡Bienvenido, ${user.displayName || 'Usuario'}! Tu cuenta ha sido creada.`, 'success');
-            } else {
-                await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
-                showToast(`¡Bienvenido de nuevo, ${user.displayName || 'Usuario'}!`, 'success');
+                // Usuario NO está registrado, cerrar sesión de Firebase y redirigir a registro
+                await auth.signOut();
+                showToast('Esta cuenta no está registrada. Por favor regístrate primero.', 'warning');
+                navigate('/register');
+                return;
             }
 
+            // Usuario existe, actualizar lastLogin
+            await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+            showToast(`¡Bienvenido de nuevo, ${user.displayName || 'Usuario'}!`, 'success');
             navigate('/projects');
         } catch (err) {
             showToast('Error al iniciar sesión con Google.', 'error');

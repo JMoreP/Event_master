@@ -112,11 +112,39 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(prev => prev ? { ...prev, ...newData } : null);
     };
 
+    // Función para refrescar los datos del usuario desde Firestore
+    const refreshUserData = async () => {
+        if (auth.currentUser) {
+            try {
+                const userRef = doc(db, 'users', auth.currentUser.uid);
+                const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+
+                    // Force specific roles for super admins
+                    let forcedRole = null;
+                    if (auth.currentUser.email === 'yorluis15@gmail.com') forcedRole = 'admin';
+                    if (auth.currentUser.email === 'jmoredavid@gmail.com') forcedRole = 'admin';
+
+                    setCurrentUser({
+                        ...auth.currentUser,
+                        ...userData,
+                        role: forcedRole || userData.role || 'assistant'
+                    });
+                }
+            } catch (error) {
+                console.error("Error refreshing user data:", error);
+            }
+        }
+    };
+
     const value = {
         currentUser,
         loading,
         logout,
         updateUserData,
+        refreshUserData,
         loginWithGoogle,
         resetPassword,
     };

@@ -107,7 +107,7 @@ const AgendaManager = ({ eventId, isAdmin }) => {
                                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:bg-slate-800 dark:border-slate-600 dark:text-white"
                                     value={newActivity.title}
                                     onChange={e => setNewActivity({ ...newActivity, title: e.target.value })}
-                                    placeholder="Ej. Keynote Opening"
+                                    placeholder="Ej. Keynote Openin"
                                 />
                             </div>
                             <div>
