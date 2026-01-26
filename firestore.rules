@@ -69,7 +69,15 @@ service cloud.firestore {
       
       allow create: if isSignedIn();
       
-      allow update, delete: if isSignedIn() && (
+      allow update: if isSignedIn() && (
+        hasRole('admin') || 
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        (resource.data.projectId != null && 
+         exists(/databases/$(database)/documents/projects/$(resource.data.projectId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/projects/$(resource.data.projectId)).data.members)
+      );
+
+      allow delete: if isSignedIn() && (
         hasRole('admin') || 
         (resource != null && resource.data.userId == request.auth.uid)
       );

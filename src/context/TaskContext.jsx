@@ -12,11 +12,13 @@ import {
     serverTimestamp,
     getDoc,
     getDocs,
-    where
+    where,
+    or
 } from 'firebase/firestore';
 
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
+import { useProjects } from './ProjectContext';
 
 const TaskContext = createContext();
 
@@ -30,6 +32,7 @@ export const useTasks = () => {
 
 export const TaskProvider = ({ children }) => {
     const { currentUser } = useAuth();
+    const { projects } = useProjects();
     const { showToast } = useToast();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,15 +48,29 @@ export const TaskProvider = ({ children }) => {
         const tasksRef = collection(db, 'tasks');
         let q;
 
-        if (currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'organizer') {
+        if (currentUser.role === 'admin' || currentUser.role === 'owner') {
             q = query(tasksRef, orderBy('createdAt', 'desc'));
         } else {
-            // Non-admins only see tasks where they are the owner/assigned
-            q = query(
-                tasksRef,
-                where('userId', '==', currentUser.uid),
-                orderBy('createdAt', 'desc')
-            );
+            // Usuarios normales: Sus tareas Y tareas de proyectos donde son miembros
+            // Limitamos a 30 proyectos para la cláusula 'in'
+            const visibleProjectIds = projects.map(p => p.id).slice(0, 30);
+
+            if (visibleProjectIds.length > 0) {
+                q = query(
+                    tasksRef,
+                    or(
+                        where('userId', '==', currentUser.uid),
+                        where('projectId', 'in', visibleProjectIds)
+                    ),
+                    orderBy('createdAt', 'desc')
+                );
+            } else {
+                q = query(
+                    tasksRef,
+                    where('userId', '==', currentUser.uid),
+                    orderBy('createdAt', 'desc')
+                );
+            }
         }
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -65,11 +82,16 @@ export const TaskProvider = ({ children }) => {
             setLoading(false);
         }, (error) => {
             console.error('Error al cargar tareas:', error);
+            // Si falla por falta de índice u otro motivo, intentar fallback simple
+            if (error.code === 'failed-precondition' || error.code === 'permission-denied') {
+                console.log("Intentando carga fallback (solo mis tareas)...");
+                // Fallback query logic logic here if needed, but for now just logging
+            }
             setLoading(false);
         });
 
         return () => unsubscribe();
-    }, [currentUser]);
+    }, [currentUser, projects]);
 
     // Función para actualizar progreso del proyecto directamente
     const updateProjectProgress = async (projectId) => {

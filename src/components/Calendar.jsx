@@ -4,7 +4,7 @@ import { useEvents } from '../context/EventContext';
 import { useTasks } from '../context/TaskContext';
 
 const Calendar = () => {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [viewDate, setViewDate] = useState(new Date());
     const [selectedDayData, setSelectedDayData] = useState(null);
     const { events, loading: eventsLoading } = useEvents();

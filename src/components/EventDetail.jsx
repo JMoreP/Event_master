@@ -230,27 +230,29 @@ const EventDetail = () => {
                 {/* Main Content (Left Column) */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Navigation Tabs */}
-                    <div className="flex border-b border-slate-200 dark:border-slate-800">
-                        {[
-                            { id: 'info', label: 'Información', icon: 'info' },
-                            { id: 'agenda', label: 'Agenda', icon: 'calendar_clock' },
-                            { id: 'speakers', label: 'Ponentes', icon: 'groups' }
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all relative ${activeTab === tab.id
-                                    ? 'text-primary'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                                    }`}
-                            >
-                                <span className="material-symbols-outlined">{tab.icon}</span>
-                                {tab.label}
-                                {activeTab === tab.id && (
-                                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
-                                )}
-                            </button>
-                        ))}
+                    <div className="w-full overflow-x-auto pb-1">
+                        <div className="flex border-b border-slate-200 dark:border-slate-800 min-w-max">
+                            {[
+                                { id: 'info', label: 'Información', icon: 'info' },
+                                { id: 'agenda', label: 'Agenda', icon: 'calendar_clock' },
+                                { id: 'speakers', label: 'Ponentes', icon: 'groups' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all relative ${activeTab === tab.id
+                                        ? 'text-primary'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined">{tab.icon}</span>
+                                    {tab.label}
+                                    {activeTab === tab.id && (
+                                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Tab Content */}

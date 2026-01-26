@@ -43,7 +43,7 @@ const Projects = () => {
                 </div>
 
                 {/* Filters & Controls Bar */}
-                <div className="flex flex-col gap-4 items-center justify-between rounded-xl border border-slate-200 bg-surface-light p-4 shadow-sm dark:bg-surface-dark dark:border-slate-800 lg:flex-row">
+                <div className="flex flex-col gap-4 items-center justify-between rounded-xl border border-slate-200 bg-surface-light p-3 md:p-4 shadow-sm dark:bg-surface-dark dark:border-slate-800 lg:flex-row">
                     <div className="flex w-full flex-1 gap-3 lg:w-auto">
                         {/* Search Projects */}
                         <div className="relative flex-1 max-w-md">

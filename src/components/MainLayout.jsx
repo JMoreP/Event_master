@@ -20,6 +20,7 @@ const MainLayout = () => {
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState({ projects: [], tasks: [] });
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -119,12 +120,69 @@ const MainLayout = () => {
                 </div>
             </aside>
 
+            {/* Mobile Sidebar Overlay */}
+            {isMenuOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                />
+            )}
+
+            {/* Mobile Sidebar */}
+            <aside className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 md:hidden flex flex-col ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200 dark:border-slate-800">
+                    <Link to="/panel" className="flex items-center gap-3" onClick={() => setIsMenuOpen(false)}>
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-white">
+                            <span className="material-symbols-outlined text-[20px]">event_note</span>
+                        </div>
+                        <h2 className="text-lg font-bold tracking-tight">EventMaster</h2>
+                    </Link>
+                    <button onClick={() => setIsMenuOpen(false)} className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div className="flex-1 space-y-1 overflow-y-auto px-3 py-6">
+                    <NavItem to="/" icon="home" label="Inicio" onClick={() => setIsMenuOpen(false)} />
+                    <NavItem to="/panel" icon="dashboard" label="Panel" active={isActive('/panel')} onClick={() => setIsMenuOpen(false)} />
+
+                    {/* Management Sections (Organizer/Admin) */}
+                    {canManage && (
+                        <>
+                            <div className="px-3 pt-4 pb-2">
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gestión</p>
+                            </div>
+                            <NavItem to="/projects" icon="list_alt" label="Proyectos" active={isActive('/projects')} onClick={() => setIsMenuOpen(false)} />
+                            <NavItem to="/tasks" icon="check_circle" label="Tareas" active={isActive('/tasks')} onClick={() => setIsMenuOpen(false)} />
+                            <NavItem to="/team" icon="group" label="Equipo" active={isActive('/team')} onClick={() => setIsMenuOpen(false)} />
+                        </>
+                    )}
+
+                    {/* Common Sections */}
+                    <div className="px-3 pt-4 pb-2">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Análisis & Eventos</p>
+                    </div>
+                    <NavItem to="/reports" icon="bar_chart" label="Reportes" active={isActive('/reports')} onClick={() => setIsMenuOpen(false)} />
+                    <NavItem to="/events" icon="calendar_month" label="Eventos" active={isActive('/events')} onClick={() => setIsMenuOpen(false)} />
+                    <NavItem to="/speakers" icon="record_voice_over" label="Ponentes" active={isActive('/speakers')} onClick={() => setIsMenuOpen(false)} />
+                    <NavItem to="/events/my-events" icon="event_available" label="Mis Eventos" active={isActive('/events/my-events')} onClick={() => setIsMenuOpen(false)} />
+                    <NavItem to="/my-gifts" icon="redeem" label="Mis Premios" active={isActive('/my-gifts')} onClick={() => setIsMenuOpen(false)} />
+                    <NavItem to="/calendar" icon="calendar_today" label="Calendario" active={isActive('/calendar')} onClick={() => setIsMenuOpen(false)} />
+                </div>
+                <div className="border-t border-slate-200 p-4 dark:border-slate-800">
+                    <NavItem to="/settings" icon="settings" label="Configuración" active={isActive('/settings')} onClick={() => setIsMenuOpen(false)} />
+                    <NavItem to="/help" icon="help" label="Ayuda" active={isActive('/help')} onClick={() => setIsMenuOpen(false)} />
+                </div>
+            </aside>
+
             {/* Main Content */}
             <div className="relative flex h-full min-w-0 flex-1 flex-col">
                 {/* Top Navigation */}
                 <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-surface-light px-6 dark:bg-surface-dark dark:border-slate-800">
                     <div className="flex items-center gap-4">
-                        <button className="text-slate-500 hover:text-primary dark:text-slate-400 md:hidden">
+                        <button
+                            className="text-slate-500 hover:text-primary dark:text-slate-400 md:hidden focus:outline-none"
+                            onClick={() => setIsMenuOpen(true)}
+                        >
                             <span className="material-symbols-outlined">menu</span>
                         </button>
                         {/* Breadcrumbs */}
@@ -294,9 +352,10 @@ const MainLayout = () => {
     );
 };
 
-const NavItem = ({ icon, label, to, active }) => (
+const NavItem = ({ icon, label, to, active, onClick }) => (
     <Link
         to={to}
+        onClick={onClick}
         className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${active
             ? 'bg-primary/10 font-medium text-primary border border-primary/20'
             : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'

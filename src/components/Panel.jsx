@@ -99,12 +99,12 @@ const Panel = () => {
     const pendingTasks = tasks.filter(t => t.status !== 'done');
     const upcomingEvents = events.slice(0, 5);
 
-    const handleBecomeAdmin = async () => {
+    const handleBecomeOrganizer = async () => {
         if (!currentUser) return;
         try {
             const userRef = doc(db, 'users', currentUser.uid);
-            await updateDoc(userRef, { role: 'admin' });
-            showToast('¡Ahora eres Administrador! La página se recargará.', 'success');
+            await updateDoc(userRef, { role: 'organizer' });
+            showToast('¡Ahora eres Organizador! La página se recargará.', 'success');
             setTimeout(() => window.location.reload(), 2000);
         } catch (error) {
             console.error("Error updating role:", error);
@@ -156,7 +156,7 @@ const Panel = () => {
                             </p>
                         </div>
                         <button
-                            onClick={handleBecomeAdmin}
+                            onClick={handleBecomeOrganizer}
                             className="px-2 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold rounded border border-slate-200 dark:border-slate-700"
                         >
                             Promover a Organizador

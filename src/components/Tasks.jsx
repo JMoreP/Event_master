@@ -91,31 +91,33 @@ const Tasks = () => {
                         </div>
                     </div>
                     {/* Filter Tabs */}
-                    <div className="flex items-center gap-2 border-l border-slate-200 pl-4 dark:border-slate-700">
-                        <button
-                            onClick={() => setFilter('all')}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'all' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        >
-                            Todas ({counts.all})
-                        </button>
-                        <button
-                            onClick={() => setFilter('todo')}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'todo' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        >
-                            Por Hacer ({counts.todo})
-                        </button>
-                        <button
-                            onClick={() => setFilter('in-progress')}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'in-progress' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        >
-                            En Progreso ({counts['in-progress']})
-                        </button>
-                        <button
-                            onClick={() => setFilter('done')}
-                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'done' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                        >
-                            Completadas ({counts.done})
-                        </button>
+                    <div className="w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0">
+                        <div className="flex items-center gap-2 border-l-0 lg:border-l border-slate-200 pl-0 lg:pl-4 dark:border-slate-700 min-w-max">
+                            <button
+                                onClick={() => setFilter('all')}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'all' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                            >
+                                Todas ({counts.all})
+                            </button>
+                            <button
+                                onClick={() => setFilter('todo')}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'todo' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                            >
+                                Por Hacer ({counts.todo})
+                            </button>
+                            <button
+                                onClick={() => setFilter('in-progress')}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'in-progress' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                            >
+                                En Progreso ({counts['in-progress']})
+                            </button>
+                            <button
+                                onClick={() => setFilter('done')}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === 'done' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                            >
+                                Completadas ({counts.done})
+                            </button>
+                        </div>
                     </div>
                 </div>
 

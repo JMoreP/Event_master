@@ -305,19 +305,19 @@ const TeamManagement = () => {
             <div className="layout-container max-w-[1200px] mx-auto p-4 md:p-8 flex flex-col gap-6 animate-fade-in-up">
 
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1">
                         <h1 className="text-3xl font-black tracking-tight text-[#111418] dark:text-white leading-tight">Gestión de Equipo</h1>
                         <p className="text-[#617589] dark:text-slate-400 text-base font-normal">
                             {selectedProjectId === 'global' ? 'Administra todos los usuarios registrados.' : 'Administra los colaboradores de este proyecto.'}
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="relative">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div className="relative flex-1 sm:flex-none">
                             <select
                                 value={selectedProjectId}
                                 onChange={(e) => setSelectedProjectId(e.target.value)}
-                                className="h-11 pl-4 pr-10 rounded-lg bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary/50 outline-none appearance-none min-w-[200px]"
+                                className="w-full h-11 pl-4 pr-10 rounded-lg bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary/50 outline-none appearance-none min-w-0 sm:min-w-[200px]"
                             >
                                 {isAdmin && <option value="global">🌍 Equipo Global</option>}
                                 <optgroup label="Tus Proyectos">
@@ -335,10 +335,10 @@ const TeamManagement = () => {
                                     setInviteData({ ...inviteData, projectId: selectedProjectId });
                                     setIsInviteModalOpen(true);
                                 }}
-                                className="flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white font-bold h-11 px-5 rounded-lg transition-all shadow-lg shadow-primary/20 transform active:scale-95 whitespace-nowrap"
+                                className="flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white font-bold h-11 px-5 rounded-lg transition-all shadow-lg shadow-primary/20 transform active:scale-95 sm:w-auto"
                             >
                                 <span className="material-symbols-outlined text-[20px]">person_add</span>
-                                <span>{selectedProjectId === 'global' ? 'Registrar Usuario' : 'Añadir Colaborador'}</span>
+                                <span className="truncate">{selectedProjectId === 'global' ? 'Registrar Usuario' : 'Añadir Colaborador'}</span>
                             </button>
                         )}
                     </div>
