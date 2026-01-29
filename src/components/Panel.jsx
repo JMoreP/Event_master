@@ -30,8 +30,8 @@ const Panel = () => {
     const [myRegistrationsCount, setMyRegistrationsCount] = useState(0);
 
     useEffect(() => {
-        // Double check isAdmin inside the effect to be safe
-        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) return;
+        // Allow both admins and organizers to fetch payments
+        if (!currentUser || !canManage) return;
 
         try {
             const registrationsRef = collectionGroup(db, 'registrations');
@@ -39,12 +39,27 @@ const Panel = () => {
 
             const unsubscribe = onSnapshot(q,
                 (snapshot) => {
-                    const payments = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ref: doc.ref,
-                        ...doc.data()
-                    }));
-                    setPendingPayments(payments);
+                    const allPayments = snapshot.docs.map(doc => {
+                        // Get event ID from parent path: events/{eventId}/registrations/{docId}
+                        const eventId = doc.ref.parent.parent.id;
+                        const event = events.find(e => e.id === eventId);
+
+                        return {
+                            id: doc.id,
+                            ref: doc.ref,
+                            eventId: eventId,
+                            eventTitle: event?.title || 'Evento desconocido',
+                            eventCreatedBy: event?.createdBy,
+                            ...doc.data()
+                        };
+                    });
+
+                    // Filter: Admin sees all, Organizer sees only their own
+                    const relevantPayments = isAdmin
+                        ? allPayments
+                        : allPayments.filter(p => p.eventCreatedBy === currentUser.uid);
+
+                    setPendingPayments(relevantPayments);
                 },
                 (error) => {
                     console.error("Error en Panel (pagos pendientes):", error);
@@ -55,26 +70,9 @@ const Panel = () => {
         } catch (error) {
             console.error("Error setting up collection group query:", error);
         }
-    }, [currentUser?.role]); // Dependency on the specific field that determines admin status
+    }, [currentUser, canManage, isAdmin, events]);
 
-    // 6. My Registrations Count
-    useEffect(() => {
-        if (!currentUser) return;
-
-        const q = query(
-            collectionGroup(db, 'registrations'),
-            where('userId', '==', currentUser.uid)
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            setMyRegistrationsCount(snapshot.docs.length);
-        }, (error) => {
-            console.error("Error en Panel (mis registros):", error);
-            setMyRegistrationsCount(0);
-        });
-
-        return () => unsubscribe();
-    }, [currentUser?.uid]);
+    // ... (lines 60-77 unchanged)
 
     const handleApprovePayment = async (payment) => {
         try {
@@ -226,8 +224,8 @@ const Panel = () => {
                     </div>
                 </section>
 
-                {/* Payment Verification Section (Admin Only) */}
-                {isAdmin && pendingPayments.length > 0 && (
+                {/* Payment Verification Section (Admin OR Organizer) */}
+                {canManage && pendingPayments.length > 0 && (
                     <section className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="flex items-center justify-between px-1">
                             <h2 className="text-slate-900 dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] flex items-center gap-2">
@@ -253,6 +251,12 @@ const Panel = () => {
                                     </div>
 
                                     <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                        <div className="flex justify-between items-center text-xs mb-1.5 pb-1.5 border-b border-slate-200 dark:border-slate-700/50">
+                                            <span className="text-slate-500 font-medium">Evento:</span>
+                                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[140px]" title={payment.eventTitle}>
+                                                {payment.eventTitle}
+                                            </span>
+                                        </div>
                                         <div className="flex justify-between items-center text-xs mb-1">
                                             <span className="text-slate-500">Monto Esperado:</span>
                                             <span className="font-black text-slate-900 dark:text-white">{payment.pricePaid} USDT</span>

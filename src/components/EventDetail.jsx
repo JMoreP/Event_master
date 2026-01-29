@@ -500,13 +500,13 @@ const EventDetail = () => {
                                         <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
                                         Gestionar Asistentes
                                     </button>
-                                    {isAdmin && (
+                                    {(isAdmin || (currentUser && event.createdBy === currentUser.uid)) && (
                                         <button
                                             onClick={handleEventDelete}
                                             className="w-full flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 text-sm font-medium hover:bg-red-500 hover:text-white transition-all text-red-600 dark:text-red-400"
                                         >
                                             <span className="material-symbols-outlined text-[18px]">delete</span>
-                                            Eliminar Evento (Admin)
+                                            Eliminar Evento
                                         </button>
                                     )}
                                 </div>
