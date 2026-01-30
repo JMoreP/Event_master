@@ -12,11 +12,13 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isResolving, setIsResolving] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuario autenticado, buscar su rol en Firestore
+                // Usuario autenticado, activamos resolving mientras buscamos rol
+                setIsResolving(true);
                 try {
                     const userRef = doc(db, 'users', user.uid);
                     const userSnap = await getDoc(userRef);
@@ -83,21 +85,28 @@ export const AuthProvider = ({ children }) => {
                     if (user.email === 'jmoredavid@gmail.com') forcedRole = 'admin';
 
                     setCurrentUser({ ...user, role: forcedRole || 'assistant' });
+                } finally {
+                    setIsResolving(false);
+                    setLoading(false);
                 }
             } else {
                 setCurrentUser(null);
+                setLoading(false);
+                setIsResolving(false);
             }
-            setLoading(false);
         });
 
         return unsubscribe;
     }, []);
 
     const logout = () => {
+        setIsResolving(true); // Signal start of transition
+        setCurrentUser(null);
         return auth.signOut();
     };
 
     const loginWithGoogle = async () => {
+        setIsResolving(true);
         const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
         const provider = new GoogleAuthProvider();
         return signInWithPopup(auth, provider);
@@ -115,6 +124,7 @@ export const AuthProvider = ({ children }) => {
     // Función para refrescar los datos del usuario desde Firestore
     const refreshUserData = async () => {
         if (auth.currentUser) {
+            setIsResolving(true);
             try {
                 const userRef = doc(db, 'users', auth.currentUser.uid);
                 const userSnap = await getDoc(userRef);
@@ -135,6 +145,8 @@ export const AuthProvider = ({ children }) => {
                 }
             } catch (error) {
                 console.error("Error refreshing user data:", error);
+            } finally {
+                setIsResolving(false);
             }
         }
     };
@@ -142,6 +154,7 @@ export const AuthProvider = ({ children }) => {
     const value = {
         currentUser,
         loading,
+        isResolving,
         logout,
         updateUserData,
         refreshUserData,

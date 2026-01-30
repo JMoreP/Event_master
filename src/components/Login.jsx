@@ -16,7 +16,7 @@ const Login = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (currentUser) {
-            navigate('/projects');
+            navigate('/panel');
         }
     }, [currentUser, navigate]);
 
@@ -26,7 +26,7 @@ const Login = () => {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             showToast(`¡Bienvenido de nuevo, ${user.displayName || 'Usuario'}!`, 'success');
-            navigate('/projects'); // Redirect to projects dashboard
+            navigate('/panel'); // Redirect to panel dashboard
         } catch (err) {
             showToast('Error al iniciar sesión. Por favor verifica tus credenciales.', 'error');
             console.error(err);
@@ -62,7 +62,7 @@ const Login = () => {
             // Usuario existe, actualizar lastLogin
             await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
             showToast(`¡Bienvenido de nuevo, ${user.displayName || 'Usuario'}!`, 'success');
-            navigate('/projects');
+            navigate('/panel');
         } catch (err) {
             showToast('Error al iniciar sesión con Google.', 'error');
             console.error(err);

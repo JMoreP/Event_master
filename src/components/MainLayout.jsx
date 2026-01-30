@@ -9,13 +9,18 @@ import UserAvatar from './UserAvatar';
 
 const MainLayout = () => {
     const location = useLocation();
-    const { currentUser, logout } = useAuth();
+    const { currentUser, logout, isResolving } = useAuth();
     const { projects } = useProjects();
     const { tasks } = useTasks();
     const { unreadCount } = useNotifications();
+
+    // While resolving role (fetching from Firestore), treat as no user/loading
+    // This prevents premature rendering of Admin options
+    const safeUser = isResolving ? null : currentUser;
+
     const currentPath = location.pathname;
-    const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'owner';
-    const isOrganizer = currentUser?.role === 'organizer';
+    const isAdmin = safeUser?.role === 'admin' || safeUser?.role === 'owner';
+    const isOrganizer = safeUser?.role === 'organizer';
     const canManage = isAdmin || isOrganizer;
 
     const [isProfileOpen, setIsProfileOpen] = useState(false);
