@@ -49,14 +49,14 @@ El sistema maneja **3 roles principales**:
 **Acceso**: Amplio, enfocado en la gestión de eventos
 
 **Puede hacer**:
-- ✅ Crear, editar y eliminar eventos (solo los propios)
-- ✅ Crear, editar y eliminar ponentes
-- ✅ Gestionar proyectos
+- ✅ Crear eventos y ponentes
+- ✅ Editar y eliminar **SOLO los eventos y ponentes que él mismo creó**
+- ✅ Gestionar proyectos propios
 - ✅ Ver tareas y calendario
-- ✅ Crear eventos y asignar speakers
 - ✅ Registrarse en eventos
 - ❌ No puede gestionar inventario de regalos (solo admin)
 - ❌ No puede gestionar equipo completo (solo admin)
+- ❌ **NO puede** editar ni eliminar ponentes creados por otros (ni siquiera de otros organizadores)
 
 ### 3. 🎫 Participante (usuario normal) - **ROL POR DEFECTO**
 
@@ -164,14 +164,19 @@ match /speakers/{speakerId} {
   // LECTURA: Todos pueden ver ponentes
   allow read: if true;
   
-  // ESCRITURA: Solo Power Users
-  allow write: if isPowerUser();
+  // CREACIÓN: Solo Power Users (admin, organizer)
+  allow create: if isPowerUser();
+  
+  // ACTUALIZACIÓN/ELIMINACIÓN: Solo Admin O el creador del ponente
+  allow update, delete: if isPowerUser() && (hasRole('admin') || resource.data.createdBy == request.auth.uid);
 }
 ```
 
 **Explicación**:
 - ✅ **Cualquiera** puede ver la lista de ponentes
-- ✅ Solo **Admin/Organizer** pueden crear, editar o eliminar ponentes
+- ✅ Solo **Admin/Organizer** pueden crear ponentes
+- ✅ **Organizer** SOLO puede editar/eliminar los ponentes que ÉL creó
+- ❌ **Organizer** NO puede modificar ponentes de otros
 - ❌ **Participantes** no pueden modificar ponentes
 
 ### Ejemplo 3: Reglas para Tareas
@@ -268,14 +273,8 @@ if (userSnap.exists()) {
 
 **Ejemplo en `Speakers.jsx`**:
 ```javascript
-const canManageSpeakers = () => {
-  if (!currentUser) return false;
-  const allowedRoles = ['admin', 'organizer'];
-  return allowedRoles.includes(currentUser.role);
-};
-
-// Uso en JSX - Solo muestra botones si tiene permisos
-{canManageSpeakers() && (
+// Solo muestra botones si es admin O si el usuario creó el ponente
+{ canManageSpeakers() && (currentUser?.role === 'admin' || speaker.createdBy === currentUser?.uid) && (
   <>
     <button onClick={handleEdit}>Editar</button>
     <button onClick={handleDelete}>Eliminar</button>
@@ -308,8 +307,8 @@ const canManageSpeakers = () => {
 | **Eliminar Eventos** | ✅ (todos) | ✅ (propios) | ❌ | ❌ |
 | **Ver Ponentes** | ✅ | ✅ | ✅ | ✅ |
 | **Crear Ponentes** | ✅ | ✅ | ❌ | ❌ |
-| **Editar Ponentes** | ✅ | ✅ | ❌ | ❌ |
-| **Eliminar Ponentes** | ✅ | ✅ | ❌ | ❌ |
+| **Editar Ponentes** | ✅ (todos) | ✅ (propios) | ❌ | ❌ |
+| **Eliminar Ponentes** | ✅ (todos) | ✅ (propios) | ❌ | ❌ |
 | **Ver Proyectos** | ✅ (todos) | ✅ (propios) | ✅ (propios) | ❌ |
 | **Crear Proyectos** | ✅ | ✅ | ❌ | ❌ |
 | **Ver Tareas** | ✅ (todas) | ✅ (propias) | ✅ (propias) | ❌ |
@@ -350,50 +349,29 @@ const canManageSpeakers = () => {
 
 ## 💡 Ejemplo de Caso de Uso Real
 
-### Escenario: Un Participante intenta eliminar un ponente
+### Escenario: Un Organizador intenta eliminar un ponente creado por OTRO organizador
 
 #### Paso 1: Frontend
-El botón de eliminar **ni siquiera aparece** (está oculto por `canManageSpeakers()`)
+El botón de eliminar **ni siquiera aparece** porque:
+`currentUser.uid !== speaker.createdBy`
 
 ```javascript
-// Solo se muestra si es admin u organizer
-{canManageSpeakers() && (
-  <button onClick={handleDelete}>Eliminar</button>
-)}
+/* La condición no se cumple */
+(currentUser.role === 'admin' || speaker.createdBy === currentUser.uid)
 ```
 
-#### Paso 2: Si manipula el código
-Aunque logre hacer aparecer el botón y hacer clic...
-
-#### Paso 3: Firestore Rules
-Al intentar ejecutar `deleteSpeaker()`, Firebase verifica:
+#### Paso 2: Firestore Rules
+Si intenta burlar la UI y enviar la petición de borrado:
 
 ```javascript
-allow write: if isPowerUser();
-// isPowerUser() verifica si el rol es 'admin' u 'organizer'
+allow update, delete: if isPowerUser() && (hasRole('admin') || resource.data.createdBy == request.auth.uid);
 ```
 
-#### Paso 4: Resultado
-- ❌ `isPowerUser()` retorna `false` (porque es 'participante')
-- ❌ Firebase rechaza la operación
-- ❌ Se muestra error: "Permission denied"
-- ✅ **El ponente NO se elimina**
-
----
-
-## 📝 Conclusión
-
-El sistema de roles de EventMaster garantiza que:
-
-✅ Cada usuario solo puede hacer lo que su rol permite  
-✅ Los datos están protegidos en la base de datos  
-✅ La interfaz se adapta automáticamente al rol del usuario  
-✅ Es imposible burlar la seguridad manipulando el código del navegador  
-✅ Los administradores tienen control total del sistema  
-✅ Los organizadores pueden gestionar eventos y ponentes  
-✅ Los participantes tienen una experiencia segura y limitada  
-
-Este sistema es **escalable**, **mantenible** y sigue las **mejores prácticas de seguridad** en aplicaciones web modernas.
+#### Paso 3: Resultado
+- ✅ `isPowerUser()` → **true** (es organizador)
+- ❌ `hasRole('admin')` → **false**
+- ❌ `resource.data.createdBy == request.auth.uid` → **false** (porque lo creó otro)
+- **Resultado Final**: ⛔ **PERMISO DENEGADO**
 
 ---
 

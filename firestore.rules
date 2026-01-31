@@ -109,9 +109,16 @@ service cloud.firestore {
     }
 
     // Ponentes
+    // Ponentes
     match /speakers/{speakerId} {
+      // LECTURA: Todos pueden ver ponentes
       allow read: if true;
-      allow write: if isPowerUser();
+      
+      // CREACIÓN: Solo Power Users (admin, organizer)
+      allow create: if isPowerUser();
+      
+      // ACTUALIZACIÓN/ELIMINACIÓN: Solo Admin O el creador del ponente
+      allow update, delete: if isPowerUser() && (hasRole('admin') || resource.data.createdBy == request.auth.uid);
     }
     
     // Regalos e Inventario

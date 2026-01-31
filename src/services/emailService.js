@@ -17,12 +17,14 @@ export const sendInvitationEmail = async (toEmail, toName, role) => {
         throw new Error("El servicio de correo no está configurado correctamente en las variables de entorno (.env)");
     }
 
+    const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+
     const templateParams = {
         to_email: toEmail,
         to_name: toName,
         role: role,
         app_name: 'EventMaster',
-        registration_link: window.location.origin + '/register'
+        registration_link: `${APP_URL}/register`
     };
 
     console.log("Enviando correo con parámetros:", templateParams);
@@ -52,13 +54,15 @@ export const sendSpeakerInvitationEmail = async (toEmail, toName, eventTitle) =>
         return Promise.resolve({ status: 'skipped', message: 'No credentials' });
     }
 
+    const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+
     const templateParams = {
         to_email: toEmail,
         to_name: toName,
         event_title: eventTitle,
         role: 'Ponente Invitado',
         app_name: 'EventMaster',
-        registration_link: window.location.origin + '/register'
+        registration_link: `${APP_URL}/register`
     };
 
     try {

@@ -58,6 +58,7 @@ export const SpeakerProvider = ({ children }) => {
             const speakersRef = collection(db, 'speakers');
             const newSpeaker = {
                 ...speakerData,
+                createdBy: currentUser.uid,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             };

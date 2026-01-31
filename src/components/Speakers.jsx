@@ -130,8 +130,8 @@ const Speakers = () => {
                                         </a>
                                     )}
 
-                                    {/* Only show edit/delete buttons for admin, organizer, or editor */}
-                                    {canManageSpeakers() && (
+                                    {/* Only show edit/delete buttons for admin, or if the user created the speaker */}
+                                    {canManageSpeakers() && (currentUser?.role === 'admin' || speaker.createdBy === currentUser?.uid) && (
                                         <>
                                             <button
                                                 onClick={() => handleEdit(speaker.id)}
