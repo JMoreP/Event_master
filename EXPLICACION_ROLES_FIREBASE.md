@@ -1,11 +1,13 @@
 # 🔐 Sistema de Roles y Reglas de Seguridad en Firebase - EventMaster
 
 ## 📋 Índice
-1. [Introducción](#introducción)
-2. [Roles de Usuario](#roles-de-usuario)
-3. [Cómo Funcionan las Reglas de Firebase](#cómo-funcionan-las-reglas-de-firebase)
-4. [Ejemplos Prácticos](#ejemplos-prácticos)
-5. [Flujo de Autenticación](#flujo-de-autenticación)
+- [Introducción](#-introducción)
+- [Roles de Usuario](#-roles-de-usuario)
+- [Cómo Funcionan las Reglas de Firebase](#️-cómo-funcionan-las-reglas-de-firebase)
+- [Ejemplos Prácticos](#-ejemplos-prácticos)
+- [Flujo de Autenticación](#-flujo-de-autenticación)
+- [Tabla Resumen de Permisos](#-tabla-resumen-de-permisos)
+- [Caso de Uso Real](#-ejemplo-de-caso-de-uso-real)
 
 ---
 
@@ -24,49 +26,57 @@ Este sistema de doble capa garantiza la seguridad incluso si alguien intenta man
 
 El sistema maneja **3 roles principales**:
 
-### 1. **Administrador (admin)**
-- **Acceso**: Total y sin restricciones
-- **Puede hacer**:
-  - ✅ Crear, editar y eliminar eventos
-  - ✅ Crear, editar y eliminar ponentes
-  - ✅ Gestionar proyectos y tareas
-  - ✅ Ver y confirmar pagos
-  - ✅ Gestionar el inventario de regalos
-  - ✅ Administrar el equipo (TeamManagement)
-  - ✅ Ver reportes completos
-  - ✅ Acceder a todas las funciones del sistema
+### 1. 👑 Administrador (`admin`)
 
-**Usuarios hardcodeados como admin**:
-- `jmoredavid@gmail.com`
-- `yorluis15@gmail.com`
+**Acceso**: Total y sin restricciones
 
-### 2. **Organizador (organizer)**
-- **Acceso**: Amplio, enfocado en la gestión de eventos
-- **Puede hacer**:
-  - ✅ Crear, editar y eliminar eventos (solo los propios)
-  - ✅ Crear, editar y eliminar ponentes
-  - ✅ Gestionar proyectos
-  - ✅ Ver tareas y calendario
-  - ✅ Crear eventos y asignar speakers
-  - ✅ Registrarse en eventos
-  - ❌ No puede gestionar inventario de regalos (solo admin)
-  - ❌ No puede gestionar equipo completo (solo admin)
+**Puede hacer**:
+- ✅ Crear, editar y eliminar eventos
+- ✅ Crear, editar y eliminar ponentes
+- ✅ Gestionar proyectos y tareas
+- ✅ Ver y confirmar pagos
+- ✅ Gestionar el inventario de regalos
+- ✅ Administrar el equipo (TeamManagement)
+- ✅ Ver reportes completos
+- ✅ Acceder a todas las funciones del sistema
 
-### 3. **Participante (usuario normal)** - ROL POR DEFECTO
-- **Acceso**: Limitado, principalmente visualización y participación
-- **Puede hacer**:
-  - ✅ Ver eventos públicos
-  - ✅ Registrarse en eventos
-  - ✅ Ver su calendario personal
-  - ✅ Ver sus propias tareas
-  - ✅ Crear tareas personales
-  - ✅ Ver ponentes
-  - ✅ Ver sus regalos ganados
-  - ✅ Editar su propio perfil
-  - ❌ **NO puede** crear eventos
-  - ❌ **NO puede** crear/editar/eliminar ponentes
-  - ❌ **NO puede** crear proyectos
-  - ❌ **NO puede** acceder a funciones administrativas
+> **Usuarios hardcodeados como admin**:
+> - `jmoredavid@gmail.com`
+> - `yorluis15@gmail.com`
+
+### 2. 🎯 Organizador (`organizer`)
+
+**Acceso**: Amplio, enfocado en la gestión de eventos
+
+**Puede hacer**:
+- ✅ Crear, editar y eliminar eventos (solo los propios)
+- ✅ Crear, editar y eliminar ponentes
+- ✅ Gestionar proyectos
+- ✅ Ver tareas y calendario
+- ✅ Crear eventos y asignar speakers
+- ✅ Registrarse en eventos
+- ❌ No puede gestionar inventario de regalos (solo admin)
+- ❌ No puede gestionar equipo completo (solo admin)
+
+### 3. 🎫 Participante (usuario normal) - **ROL POR DEFECTO**
+
+**Acceso**: Limitado, principalmente visualización y participación
+
+**Puede hacer**:
+- ✅ Ver eventos públicos
+- ✅ Registrarse en eventos
+- ✅ Ver su calendario personal
+- ✅ Ver sus propias tareas
+- ✅ Crear tareas personales
+- ✅ Ver ponentes
+- ✅ Ver sus regalos ganados
+- ✅ Editar su propio perfil
+
+**NO puede hacer**:
+- ❌ Crear eventos
+- ❌ Crear/editar/eliminar ponentes
+- ❌ Crear proyectos
+- ❌ Acceder a funciones administrativas
 
 ---
 
@@ -78,32 +88,40 @@ Las reglas de Firebase están en el archivo `firestore.rules` y funcionan como u
 
 ### Funciones Helper Principales
 
+#### 1. Verificar si el usuario está autenticado
 ```javascript
-// 1. Verifica si el usuario está autenticado
 function isSignedIn() {
   return request.auth != null;
 }
+```
 
-// 2. Obtiene los datos del usuario desde Firestore
+#### 2. Obtener datos del usuario desde Firestore
+```javascript
 function getUserData() {
   return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
 }
+```
 
-// 3. Verifica si es un Super Admin (emails hardcodeados)
+#### 3. Verificar si es un Super Admin
+```javascript
 function isSuperAdmin() {
   return isSignedIn() && 
          request.auth.token.email in ['jmoredavid@gmail.com', 'yorluis15@gmail.com'];
 }
+```
 
-// 4. Verifica si tiene un rol específico
+#### 4. Verificar si tiene un rol específico
+```javascript
 function hasRole(role) {
   return (role == 'admin' && isSuperAdmin()) || 
          (isSignedIn() && 
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
           getUserData().role == role);
 }
+```
 
-// 5. Verifica si es un "Power User" (admin u organizer)
+#### 5. Verificar si es un "Power User"
+```javascript
 function isPowerUser() {
   return isSuperAdmin() || 
          (isSignedIn() && 
@@ -211,74 +229,18 @@ match /users/{userId} {
 - ✅ Solo puedes **editar tu propio perfil**
 - ✅ **Admin/Organizer** pueden editar cualquier perfil (para gestión de equipo)
 
-### Ejemplo 5: Reglas para Proyectos
-
-```javascript
-match /projects/{projectId} {
-  // Proyecto general: acceso total para todos los autenticados
-  allow read, write: if isSignedIn() && projectId == 'general-project';
-
-  // Otros proyectos
-  allow read: if isSignedIn() && (
-    hasRole('admin') || 
-    resource.data.ownerId == request.auth.uid || 
-    (resource.data.members != null && request.auth.uid in resource.data.members) ||
-    resource.data.isPublic == true
-  );
-  
-  allow create: if isSignedIn() && isPowerUser();
-  
-  allow update: if isSignedIn() && (
-    hasRole('admin') || 
-    resource.data.ownerId == request.auth.uid || 
-    (resource.data.members != null && request.auth.uid in resource.data.members)
-  );
-  
-  allow delete: if isSignedIn() && (
-    hasRole('admin') || 
-    resource.data.ownerId == request.auth.uid
-  );
-}
-```
-
-**Explicación**:
-- ✅ **Admin/Organizer** pueden crear proyectos
-- ✅ Puedes ver proyectos donde eres dueño o miembro
-- ✅ Solo el **dueño del proyecto** o **admin** pueden eliminarlo
-- ❌ **Participantes** no pueden crear proyectos
-
 ---
 
 ## 🔄 Flujo de Autenticación
 
 ### 1. Registro de Usuario
 
-```
-┌─────────────────────┐
-│ Usuario se registra │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────────────────────┐
-│ Firebase Authentication crea cuenta │
-└──────────┬──────────────────────────┘
-           │
-           ▼
-┌────────────────────────────────────────────┐
-│ Se crea documento en Firestore /users/uid │
-└──────────┬─────────────────────────────────┘
-           │
-           ▼
-┌──────────────────────────────────────────┐
-│ Se asigna rol por defecto: "participante"│
-└──────────┬───────────────────────────────┘
-           │
-           ▼
-┌────────────────────────┐
-│ Usuario puede iniciar  │
-│      sesión            │
-└────────────────────────┘
-```
+1. **Usuario se registra** → Firebase Authentication crea cuenta
+2. **Se crea documento** en Firestore `/users/{uid}`
+3. **Se asigna rol por defecto**: `"participante"`
+4. **Usuario puede iniciar sesión**
+
+### 2. Verificación de Rol al Iniciar Sesión
 
 **Código en `AuthContext.jsx`**:
 ```javascript
@@ -297,15 +259,15 @@ if (userSnap.exists()) {
   setCurrentUser({
     ...user,
     ...userData,
-    role: forcedRole || userData.role || 'participante' // Rol por defecto
+    role: forcedRole || userData.role || 'participante'
   });
 }
 ```
 
-### 2. Verificación de Permisos en Frontend
+### 3. Verificación de Permisos en Frontend
 
+**Ejemplo en `Speakers.jsx`**:
 ```javascript
-// Ejemplo en Speakers.jsx
 const canManageSpeakers = () => {
   if (!currentUser) return false;
   const allowedRoles = ['admin', 'organizer'];
@@ -321,42 +283,25 @@ const canManageSpeakers = () => {
 )}
 ```
 
-### 3. Verificación en Backend (Firestore)
+### 4. Proceso de Verificación en Firestore
 
-```
-┌──────────────────────────────────────┐
-│ Usuario intenta escribir en Firestore│
-└──────────┬───────────────────────────┘
-           │
-           ▼
-    ┌──────────────┐
-    │¿Autenticado? │
-    └──┬────────┬──┘
-       │ NO     │ SÍ
-       ▼        ▼
-    ┌─────┐  ┌──────────────┐
-    │ ❌  │  │¿Tiene el rol?│
-    │Deny │  └──┬────────┬──┘
-    └─────┘     │ NO     │ SÍ
-                ▼        ▼
-             ┌─────┐  ┌────────────────┐
-             │ ❌  │  │¿Es dueño O     │
-             │Deny │  │  admin?        │
-             └─────┘  └──┬──────────┬──┘
-                         │ NO       │ SÍ
-                         ▼          ▼
-                      ┌─────┐   ┌─────┐
-                      │ ❌  │   │ ✅  │
-                      │Deny │   │Allow│
-                      └─────┘   └─────┘
-```
+1. **Usuario intenta escribir** en Firestore
+2. **¿Está autenticado?**
+   - ❌ NO → Permiso denegado
+   - ✅ SÍ → Continuar
+3. **¿Tiene el rol necesario?**
+   - ❌ NO → Permiso denegado
+   - ✅ SÍ → Continuar
+4. **¿Es dueño del recurso O admin?**
+   - ❌ NO → Permiso denegado
+   - ✅ SÍ → **Operación permitida**
 
 ---
 
 ## 📊 Tabla Resumen de Permisos
 
 | Recurso | Admin | Organizer | Participante | Sin Login |
-|---------|-------|-----------|--------------|-----------|
+|---------|:-----:|:---------:|:------------:|:---------:|
 | **Ver Eventos** | ✅ | ✅ | ✅ | ✅ |
 | **Crear Eventos** | ✅ | ✅ | ❌ | ❌ |
 | **Editar Eventos** | ✅ (todos) | ✅ (propios) | ❌ | ❌ |
@@ -365,7 +310,7 @@ const canManageSpeakers = () => {
 | **Crear Ponentes** | ✅ | ✅ | ❌ | ❌ |
 | **Editar Ponentes** | ✅ | ✅ | ❌ | ❌ |
 | **Eliminar Ponentes** | ✅ | ✅ | ❌ | ❌ |
-| **Ver Proyectos** | ✅ (todos) | ✅ (propios/miembro) | ✅ (propios/miembro) | ❌ |
+| **Ver Proyectos** | ✅ (todos) | ✅ (propios) | ✅ (propios) | ❌ |
 | **Crear Proyectos** | ✅ | ✅ | ❌ | ❌ |
 | **Ver Tareas** | ✅ (todas) | ✅ (propias) | ✅ (propias) | ❌ |
 | **Crear Tareas** | ✅ | ✅ | ✅ | ❌ |
@@ -376,28 +321,28 @@ const canManageSpeakers = () => {
 
 ---
 
-## 🔑 Puntos Clave para la Explicación
+## 🔑 Puntos Clave
 
-### 1. **Seguridad Multicapa**
+### 1. 🛡️ Seguridad Multicapa
 - **Capa 1 (Frontend)**: Oculta botones y opciones según el rol
 - **Capa 2 (Firestore Rules)**: Bloquea operaciones no autorizadas en la base de datos
 - **Capa 3 (Authentication)**: Verifica la identidad del usuario
 
-### 2. **Rol por Defecto**
+### 2. 🎫 Rol por Defecto
 - Cuando un usuario se registra, automáticamente recibe el rol **`participante`**
 - Los administradores pueden cambiar roles desde TeamManagement (solo admin)
 
-### 3. **Super Admins**
+### 3. 👑 Super Admins
 - Los emails `jmoredavid@gmail.com` y `yorluis15@gmail.com` **siempre son admin**
 - Esto está hardcodeado tanto en el frontend como en las reglas de Firestore
 - No se puede cambiar su rol desde la interfaz
 
-### 4. **Principio de Menor Privilegio**
+### 4. 🔒 Principio de Menor Privilegio
 - Los usuarios solo tienen acceso a lo que necesitan para su función
-- Por defecto, todo está bloqueado (`allow read, write: if false;`)
+- Por defecto, todo está bloqueado
 - Solo se permiten operaciones específicas según el rol
 
-### 5. **Validación en Tiempo Real**
+### 5. ⚡ Validación en Tiempo Real
 - Cada operación se valida instantáneamente
 - Si alguien intenta manipular el código del navegador, Firestore lo bloquea
 
@@ -407,51 +352,67 @@ const canManageSpeakers = () => {
 
 ### Escenario: Un Participante intenta eliminar un ponente
 
-1. **Frontend**: El botón de eliminar ni siquiera aparece (está oculto por `canManageSpeakers()`)
-   ```javascript
-   // Solo se muestra si es admin u organizer
-   {canManageSpeakers() && (
-     <button onClick={handleDelete}>Eliminar</button>
-   )}
-   ```
+#### Paso 1: Frontend
+El botón de eliminar **ni siquiera aparece** (está oculto por `canManageSpeakers()`)
 
-2. **Si manipula el código**: Aunque logre hacer aparecer el botón y hacer clic
+```javascript
+// Solo se muestra si es admin u organizer
+{canManageSpeakers() && (
+  <button onClick={handleDelete}>Eliminar</button>
+)}
+```
 
-3. **Firestore Rules**: Al intentar ejecutar `deleteSpeaker()`, Firebase verifica:
-   ```javascript
-   allow write: if isPowerUser();
-   // isPowerUser() verifica si el rol es 'admin' u 'organizer'
-   ```
-   
-4. **Resultado**: 
-   - ❌ `isPowerUser()` retorna `false` (porque es 'participante')
-   - ❌ Firebase rechaza la operación
-   - ❌ Se muestra error: "Permission denied"
-   - ✅ El ponente NO se elimina
+#### Paso 2: Si manipula el código
+Aunque logre hacer aparecer el botón y hacer clic...
+
+#### Paso 3: Firestore Rules
+Al intentar ejecutar `deleteSpeaker()`, Firebase verifica:
+
+```javascript
+allow write: if isPowerUser();
+// isPowerUser() verifica si el rol es 'admin' u 'organizer'
+```
+
+#### Paso 4: Resultado
+- ❌ `isPowerUser()` retorna `false` (porque es 'participante')
+- ❌ Firebase rechaza la operación
+- ❌ Se muestra error: "Permission denied"
+- ✅ **El ponente NO se elimina**
 
 ---
 
 ## 📝 Conclusión
 
 El sistema de roles de EventMaster garantiza que:
-- ✅ Cada usuario solo puede hacer lo que su rol permite
-- ✅ Los datos están protegidos en la base de datos
-- ✅ La interfaz se adapta automáticamente al rol del usuario
-- ✅ Es imposible burlar la seguridad manipulando el código del navegador
-- ✅ Los administradores tienen control total del sistema
-- ✅ Los organizadores pueden gestionar eventos y ponentes
-- ✅ Los participantes tienen una experiencia segura y limitada
 
-Este sistema es escalable, mantenible y sigue las mejores prácticas de seguridad en aplicaciones web modernas.
+✅ Cada usuario solo puede hacer lo que su rol permite  
+✅ Los datos están protegidos en la base de datos  
+✅ La interfaz se adapta automáticamente al rol del usuario  
+✅ Es imposible burlar la seguridad manipulando el código del navegador  
+✅ Los administradores tienen control total del sistema  
+✅ Los organizadores pueden gestionar eventos y ponentes  
+✅ Los participantes tienen una experiencia segura y limitada  
+
+Este sistema es **escalable**, **mantenible** y sigue las **mejores prácticas de seguridad** en aplicaciones web modernas.
 
 ---
 
 ## 🎓 Glosario de Términos
 
-- **RBAC**: Role-Based Access Control (Control de Acceso Basado en Roles)
-- **Firestore**: Base de datos NoSQL de Firebase
-- **Authentication**: Sistema de autenticación de Firebase
-- **Power User**: Usuario con permisos elevados (admin u organizer)
-- **UID**: User ID único asignado por Firebase a cada usuario
-- **Firestore Rules**: Reglas de seguridad que controlan el acceso a la base de datos
-- **Super Admin**: Usuarios con email hardcodeado que siempre tienen rol admin
+| Término | Definición |
+|---------|-----------|
+| **RBAC** | Role-Based Access Control (Control de Acceso Basado en Roles) |
+| **Firestore** | Base de datos NoSQL de Firebase |
+| **Authentication** | Sistema de autenticación de Firebase |
+| **Power User** | Usuario con permisos elevados (admin u organizer) |
+| **UID** | User ID único asignado por Firebase a cada usuario |
+| **Firestore Rules** | Reglas de seguridad que controlan el acceso a la base de datos |
+| **Super Admin** | Usuarios con email hardcodeado que siempre tienen rol admin |
+
+---
+
+<div align="center">
+
+**EventMaster** - Sistema de Gestión de Eventos con Seguridad Robusta 🔐
+
+</div>
