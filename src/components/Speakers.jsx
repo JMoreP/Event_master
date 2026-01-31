@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { useSpeakers } from '../context/SpeakerContext';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 import UserAvatar from './UserAvatar';
 
 const Speakers = () => {
-    const { speakers, loading } = useSpeakers();
+    const { speakers, loading, deleteSpeaker } = useSpeakers();
+    const { currentUser } = useAuth();
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
 
     const filteredSpeakers = speakers.filter(speaker => {
         const name = speaker?.name || '';
@@ -13,6 +17,33 @@ const Speakers = () => {
         const search = searchTerm.toLowerCase();
         return name.toLowerCase().includes(search) || expertise.toLowerCase().includes(search);
     });
+
+    // Check if user has permission to edit/delete speakers
+    const canManageSpeakers = () => {
+        if (!currentUser) return false;
+        const allowedRoles = ['admin', 'organizer', 'editor'];
+        return allowedRoles.includes(currentUser.role);
+    };
+
+    const handleEdit = (speakerId) => {
+        navigate(`/speakers/edit/${speakerId}`);
+    };
+
+    const handleDeleteClick = (speaker) => {
+        setDeleteConfirm(speaker);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (deleteConfirm) {
+            try {
+                await deleteSpeaker(deleteConfirm.id);
+                setDeleteConfirm(null);
+            } catch (error) {
+                console.error('Error al eliminar ponente:', error);
+                alert('Error al eliminar el ponente. Por favor, intenta de nuevo.');
+            }
+        }
+    };
 
     if (loading) {
         return (
@@ -32,13 +63,15 @@ const Speakers = () => {
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 font-medium">Gestiona y descubre a los líderes que impulsan tus eventos.</p>
                 </div>
-                <Link
-                    to="/speakers/create"
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-600 transition-all shadow-lg shadow-primary/25 whitespace-nowrap"
-                >
-                    <span className="material-symbols-outlined text-[20px]">add</span>
-                    Nuevo Ponente
-                </Link>
+                {canManageSpeakers() && (
+                    <Link
+                        to="/speakers/create"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-600 transition-all shadow-lg shadow-primary/25 whitespace-nowrap"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">add</span>
+                        Nuevo Ponente
+                    </Link>
+                )}
             </div>
 
             {/* Search and Filters */}
@@ -60,7 +93,7 @@ const Speakers = () => {
                     {filteredSpeakers.map(speaker => (
                         <div
                             key={speaker.id}
-                            className="group bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                            className="group bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full"
                         >
                             <div className="aspect-square relative overflow-hidden bg-slate-100 dark:bg-slate-900">
                                 <UserAvatar
@@ -74,7 +107,7 @@ const Speakers = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="p-5">
+                            <div className="p-5 flex flex-col flex-1">
                                 <h3 className="font-black text-lg text-slate-900 dark:text-white leading-tight mb-1 group-hover:text-primary transition-colors">
                                     {speaker.name}
                                 </h3>
@@ -85,7 +118,7 @@ const Speakers = () => {
                                     {speaker.bio || 'Sin biografía disponible por el momento.'}
                                 </p>
 
-                                <div className="flex items-center gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex items-center gap-2 pt-4 mt-auto border-t border-slate-100 dark:border-slate-800">
                                     {speaker.social?.linkedin && (
                                         <a href={speaker.social.linkedin} target="_blank" rel="noreferrer" className="size-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
                                             <span className="material-symbols-outlined text-[18px]">account_circle</span>
@@ -96,9 +129,26 @@ const Speakers = () => {
                                             <span className="material-symbols-outlined text-[18px]">mail</span>
                                         </a>
                                     )}
-                                    <button className="ml-auto p-2 rounded-lg text-slate-400 hover:text-primary transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
-                                        <span className="material-symbols-outlined text-[20px]">edit</span>
-                                    </button>
+
+                                    {/* Only show edit/delete buttons for admin, organizer, or editor */}
+                                    {canManageSpeakers() && (
+                                        <>
+                                            <button
+                                                onClick={() => handleEdit(speaker.id)}
+                                                className="ml-auto p-2 rounded-lg text-slate-400 hover:text-primary transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                                                title="Editar ponente"
+                                            >
+                                                <span className="material-symbols-outlined text-[20px]">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(speaker)}
+                                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                title="Eliminar ponente"
+                                            >
+                                                <span className="material-symbols-outlined text-[20px]">delete</span>
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -115,6 +165,41 @@ const Speakers = () => {
                     >
                         Limpiar filtros
                     </button>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-surface-dark rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="size-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-red-600 text-[28px]">warning</span>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white">Confirmar Eliminación</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Esta acción no se puede deshacer</p>
+                            </div>
+                        </div>
+                        <p className="text-slate-700 dark:text-slate-300 mb-6">
+                            ¿Estás seguro de que deseas eliminar a <span className="font-bold text-slate-900 dark:text-white">{deleteConfirm.name}</span>?
+                            Toda la información del ponente se perderá permanentemente.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleDeleteConfirm}
+                                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/25"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

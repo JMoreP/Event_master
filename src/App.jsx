@@ -16,6 +16,7 @@ import ProjectDetail from './components/ProjectDetail';
 import CreateEvent from './components/CreateEvent';
 import Speakers from './components/Speakers';
 import CreateSpeaker from './components/CreateSpeaker';
+import EditSpeaker from './components/EditSpeaker';
 import MyEvents from './components/MyEvents';
 import GiftsInventory from './components/GiftsInventory';
 import MyGifts from './components/MyGifts';
@@ -77,6 +78,7 @@ function App() {
                               <Route path="/projects/create" element={<CreateProject />} />
                               <Route path="/projects/edit/:id" element={<CreateProject />} />
                               <Route path="/speakers/create" element={<CreateSpeaker />} />
+                              <Route path="/speakers/edit/:id" element={<EditSpeaker />} />
                               <Route path="/gifts" element={<GiftsInventory />} />
                               <Route path="/team" element={<TeamManagement />} />
                             </Route>
